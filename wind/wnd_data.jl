@@ -1,7 +1,12 @@
+#Data describing a wind profile
 ########################################################
+#this is the default wind profile used if no other is specified
 function wndD_prof()
+#creates a wind object
     wnd=wind()
+#delta is the load loss factor
     wnd.delta=0.23
+#the PU production
     wnd.pu=[0.002815
     0.013872
     0.030803
@@ -80,7 +85,7 @@ function wndD_prof()
     0.94862
     0.97833
     1]
-
+#the PU Curtailed energy
     wnd.ce=[3462.7
     3366
     3219.8

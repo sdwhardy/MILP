@@ -1,3 +1,4 @@
+#this file describes the structure of wind objects
 ###################################################
 mutable struct wind
       wsp::Array{Float64}

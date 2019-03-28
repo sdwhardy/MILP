@@ -1,13 +1,28 @@
+#=
+This file contains the input data for equipment used
+=#
 ########################################################
+#set the system AC frequency
+function eqpD_freq()
+    return 50.0
+end
+########################################################
+#Set maximum of cables possible in parallel
+function eqpD_MAXcbls()
+    return 15
+end
+########################################################
+#the efficiency of transformers
 function eqpD_xEFF()
     eta=0.994
     return eta
 end
 ########################################################
+#138kV cables
 function eqpD_138cbl_opt(cbls,km)
-    #exchange rate
+#exchange rate
     p2e=cstD_xchg()
-    #%kV,cm^2,mohms/km,nF/km,Amps,10^3 euros/km, capacity at km
+#%kV,cm^2,mohms/km,nF/km,Amps,10^3 euros/km, capacity at km
     a=[132,185,100,165,501,424*p2e]
     b=[132,300,76.1,175,600,504*p2e]
     c=[132,400,60.6,185,677,568*p2e]
@@ -21,7 +36,11 @@ function eqpD_138cbl_opt(cbls,km)
     return cbls
 end
 ########################################################
+#220kV cables
 function eqpD_220cbl_opt(cbls,km)
+#exchange rate
+    p2e=cstD_xchg()
+#%kV,cm^2,mohms/km,nF/km,Amps,10^3 euros/km, capacity at km
     a=[220,400,60.1,122,665,728*p2e]
     b=[220,500,48.9,136,732,815*p2e]
     c=[220,630,39.1,151,808,850*p2e]
@@ -33,7 +52,11 @@ function eqpD_220cbl_opt(cbls,km)
     return cbls
 end
 ########################################################
+#400kV cables
 function eqpD_400cbl_opt(cbls,km)
+#exchange rate
+    p2e=cstD_xchg()
+#%kV,cm^2,mohms/km,nF/km,Amps,10^3 euros/km, capacity at km
     a=[400,500,40,117,776,1239*p2e,]
     b=[400,630,36,125,824,1323*p2e]
     c=[400,800,31.4,130,870,1400*p2e]
@@ -49,19 +72,21 @@ function eqpD_400cbl_opt(cbls,km)
 
 end
 ########################################################
+#150kV hvdc cables
 function eqpD_150cbl_opt(cbls)
 end
 ########################################################
+#300kV hvdc cables
 function eqpD_300cbl_opt(cbls)
 end
 ########################################################
+#Sets the limits that cables will be sized as a % of OWPP capacity
 function eqpD_cbl_lims()
-    return [0.5,1.25]
+    return [0.9,1.25]
 end
 ########################################################
+#failure data for cables
 function eqpD_cbl_fail(cbl)
-    #failure data
-    #cables
     cbl.fr=0.04#/yr/100km
     cbl.mttr=2.0#/yr/100km
     cbl.mc=0.56

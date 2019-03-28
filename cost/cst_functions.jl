@@ -15,11 +15,10 @@ connects 2 OSS and false if from OSS to PCC=#
 function cstF_cbl_ttl(l,S,kv,wp,os)
     cbls_all=[]
     cbls_2use=[]
-#create 2 objects of type results
-    cst_tmp=results()
-    cst=results()
+#create 1 object of type cbl_costs
+    cb=cbl()
 #Initialize to very high total for comparison
-    cst.ttl=Inf
+    cb.results.ttl=Inf
 #create an object of type ks
     ks=cstD_cfs()
 #returns all base data available for kv cables
@@ -28,24 +27,24 @@ function cstF_cbl_ttl(l,S,kv,wp,os)
     cbls_2use=eqpF_cbl_sel(cbls_all,S,l)
     for i in cbls_2use
 #capex
-        cst_tmp.cbc=cstF_cbl_cpx(i)
+        i.results.cbc=cstF_cbl_cpx(i)
 #cost of compensastion
-        cst_tmp.qc=cstF_ACcbl_q(i,os,ks)
+        i.results.qc=cstF_ACcbl_q(i,os,ks)
 #cost of losses
-        cst_tmp.rlc=cstF_ACcbl_rlc(i,S,ks,wp)
+        i.results.rlc=cstF_ACcbl_rlc(i,S,ks,wp)
 #corrective maintenance
-        cst_tmp.cm=cstF_eqp_cm(i,ks)
+        i.results.cm=cstF_eqp_cm(i,ks)
 #eens calculation
-        cst_tmp.eens=eensF_eqpEENS(i,S,ks,wp)
+        i.results.eens=eensF_eqpEENS(i,S,ks,wp)
 #totals the cable cost
-        cst_tmp.ttl=cstF_ttl(cst_tmp)
+        i.results.ttl=cstF_CBLttl(i.results)
 #store lowest cost option
-        if cst_tmp.ttl<cst.ttl
-            cst=deepcopy(cst_tmp)
+        if i.results.ttl<cb.results.ttl
+            cb=deepcopy(i)
         end
     end
 #return optimal cable costs
-    return cst
+    return cb
 end
 #############################################
 #CAPEX of cable
@@ -58,9 +57,10 @@ end
 function cstF_ACcbl_q(cbl,os,ks)
     cstD_QC(os,ks)
 #div sets compensation to 50-50 split
+    f=eqpD_freq()
     div=0.5
     A=cbl.farrad*cbl.length*cbl.num
-    Q=2*pi*50*cbl.volt^2*A
+    Q=2*pi*f*cbl.volt^2*A
     Q_oss=Q*div
     Q_pcc=Q*(1-div)
     qc=ks.Qc_oss*Q_oss+ks.Qc_pcc*Q_pcc
@@ -96,9 +96,9 @@ function cstF_eqp_cm(eq,k)
     return cm
 end
 #############################################
-#sums all costs and returns the total
-function cstF_ttl(res)
-    ttl=res.oppc+res.opc+res.tlc_pcc+res.tlc_oss+res.rlc+res.qc+res.cbc+res.cm+res.eens
+#sums all cable costs and returns the total
+function cstF_CBLttl(res)
+    ttl=res.rlc+res.qc+res.cbc+res.cm+res.eens
     return ttl
 end
 #############################################

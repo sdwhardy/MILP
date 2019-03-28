@@ -1,3 +1,8 @@
+#=
+This file contains functions that manipulate the equipment data
+=#
+########################################################
+#loads values into the end of an array.
 function eqpF_cbls_caps(cbls,km)
     for i in cbls
         push!(i,eqpF_km_cap(km,i[1],i[4],i[5]))
@@ -5,9 +10,13 @@ function eqpF_cbls_caps(cbls,km)
     return cbls
 end
 ########################################################
+#Calculates the new hvac cable capacity after 50-50 compensation at distance km.
 function eqpF_km_cap(l,v,q,a)
-    f=50
+#get system frequency
+    f=eqpD_freq()
+#Calculates the square of new hvac cable capacity after 50-50 compensation at distance km.
     mva=(sqrt(3)*v*10^3*a/10^6)^2-((0.5*((v*10^3)^2*2*pi*f*l*q*10^-9))/10^6)^2
+#takes square root if positive returns zero if negative
     if mva>=0
         mva=sqrt(mva)
     else
@@ -16,14 +25,15 @@ function eqpF_km_cap(l,v,q,a)
  return mva
 end
 ########################################################
+#loads a value into the last position of each array in an araay of arrays
 function eqpF_pushArray(eqp,array)
-    #for i=1:length(array)
     for i in array
         push!(eqp,i)
     end
     return eqp
 end
 ########################################################
+#Logis function that gets the cable data of appropriae voltage level
 function eqpF_cbl_opt(kv,cbls,km)
     if kv==138.0
         opt=eqpD_138cbl_opt(cbls,km)
@@ -41,6 +51,7 @@ function eqpF_cbl_opt(kv,cbls,km)
     return opt
 end
 ########################################################
+#Fills in the physical data of a cable into the cable structure
 function eqpF_cbl_struct(cb,km,num)
     cbl_data=cbl()
     cbl_data.volt=cb[1]
@@ -52,21 +63,23 @@ function eqpF_cbl_struct(cb,km,num)
     cbl_data.length=km
     cbl_data.mva=cb[7]
     cbl_data.num=num
-    #Set failure data
+#Set failure data
     eqpD_cbl_fail(cbl_data)
-    #scale for return
+#scale for return
     cbl_data.ohm=cbl_data.ohm*10^-3
     cbl_data.farrad=cbl_data.farrad*10^-9
     cbl_data.cost=cbl_data.cost*10^-3
     return cbl_data
 end
 ########################################################
+#Selects sets of cables that satisfy ampacity requirements given by limits
 function eqpF_cbl_sel(cbls,S,l)
     cbls_2use=[]
+#Get limits and max cables possible in parallel - specified in eqp_data.jl
     lims=eqpD_cbl_lims()
-    #number of cables in parallel
+    parCmax=eqpD_MAXcbls()
     for i in cbls
-        for j=1:10
+        for j=1:parCmax
             if ((j*i[7])>lims[1]*S && (j*i[7])<lims[2]*S)
                 push!(cbls_2use,eqpF_cbl_struct(i,l,j))
             end
