@@ -12,6 +12,111 @@ l is the length of the cable, S is the power to be transmitted,
 kv is the voltage rating of the cable, wp is an object that describes
 the wind profile, os is a binary variable that which is true if a cable
 connects 2 OSS and false if from OSS to PCC=#
+#######################################################################################################################################
+#picks points along the range to calculate
+function cstF_points(mn,mx)
+    points=Array{Float64,1}()
+#higher number increases the points chosen but increases computation time (max tried is 6 which is 4x slower than 3)
+    acrcy=3
+#selets points equally allong the range
+    div=(mx-mn)/acrcy
+#sets mini range around points selected
+    offset=div/acrcy
+#sets amount of increase between points
+    unit=2*offset/acrcy
+#loads all points into an array
+    for i=1:(acrcy-1)
+        push!(points,(mn+i*div)-offset)
+        for j=1:acrcy
+            push!(points,((mn+i*div)-offset)+j*unit)
+        end
+    end
+    return points
+end
+#############################################
+function avrg(a)
+    ttl=sum(a)
+    av=ttl/length(a)
+    return av
+end
+#############################################
+#This function eliminates points were no cable is really suitable so cost is unrealistically high
+function cstF_rmvCblOutLrs(cbls,pnts)
+    lngth=length(cbls)
+    cap_rt=[]
+#Calculate ratio of cable capacity to owpp capacity
+    for i=1:lngth
+        push!(cap_rt,(cbls[i].num*cbls[i].mva)/pnts[i])
+    end
+#Checks if selcted points average ratio is acceptable, gives warning if not
+    avg=avrg(cap_rt)
+    if avg<0.93 !! avg>0.97
+        println("Cable capacity ratio is outside normal limits!")
+        println(avg)
+    end
+#Eliminate outliers and keep only the cables that are "well" sized
+    while length(cbls)>trunc(Int, lngth/2)
+        mx=findmax(cap_rt)
+        deleteat!(pnts,mx[2])
+        deleteat!(cbls,mx[2])
+        deleteat!(cap_rt,mx[2])
+        mn=findmin(cap_rt)
+        deleteat!(pnts,mn[2])
+        deleteat!(cbls,mn[2])
+        deleteat!(cap_rt,mn[2])
+    end
+#Checks if selcted points average ratio is acceptable, gives warning if not
+    avg=avrg(cap_rt)
+    if avg<0.95 || avg>0.99
+        println("Cable capacity ratio  after removal of outsiders is outside normal limits!")
+        println(avg)
+    end
+end
+#############################################
+#Calculates a linear regression model for a kv cable length l
+function cstF_linearize_cbl(l,S_min,S_max,kv,wp,o2o)
+#checks if limits are reasonable for cable type
+    S_min,S_max=cstF_chkCblLms(l,S_min,S_max,kv,wp,o2o)
+    ttls=Array{Float64,1}()
+    cbls=[]
+#Selects appropriate points along the range to calculate
+    pnts=cstF_points(S_min,S_max)
+    for pnt in pnts
+        cb=cbl()
+#Finds optimal cable for point
+        cb=cstF_cbl_ttl(l,pnt,kv,wp,o2o)
+        push!(cbls,cb)
+    end
+#removes cables at extreme under or over loading
+    cstF_rmvCblOutLrs(cbls,pnts)
+#seperates results into array of total costs only
+    for cbl in cbls
+        push!(ttls,cbl.results.ttl)
+    end
+#fits linear model
+    alph_beta=reverse([pnts ones(length(pnts))]\ttls)
+#Adds limits to array and returns
+    push!(alph_beta,S_min)
+    push!(alph_beta,S_max)
+    return alph_beta
+end
+#############################################
+#Adjusts demanded limits of cable if outside acceptable linear range
+#%%%%%%%%%%%%%%%%%% Future Upgrade Investigate further how to ensure linear range is maintained %%%%%%%%%%%%%%%
+function cstF_chkCblLms(l,S_min,S_max,kv,wp,o2o)
+    cbls_all=[]
+    cbls_all=eqpF_cbl_opt(kv,cbls_all,l)
+#Checks upper range
+    if S_max>eqpD_MAXcbls()*cbls_all[length(cbls_all)][7]
+        S_max=eqpD_MAXcbls()*cbls_all[length(cbls_all)][7]
+    end
+#Checks lower range
+    if 1.5*S_min<cbls_all[1][7]
+        S_min=cbls_all[1][7]/1.5
+    end
+    return S_min,S_max
+end
+#######################################################################################################################################
 function cstF_cbl_ttl(l,S,kv,wp,os)
     cbls_all=[]
     cbls_2use=[]

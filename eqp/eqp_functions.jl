@@ -33,7 +33,7 @@ function eqpF_pushArray(eqp,array)
     return eqp
 end
 ########################################################
-#Logis function that gets the cable data of appropriae voltage level
+#Logic function that gets the cable data of appropriae voltage level
 function eqpF_cbl_opt(kv,cbls,km)
     if kv==138.0
         opt=eqpD_138cbl_opt(cbls,km)

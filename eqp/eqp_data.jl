@@ -9,7 +9,7 @@ end
 ########################################################
 #Set maximum of cables possible in parallel
 function eqpD_MAXcbls()
-    return 15
+    return 12
 end
 ########################################################
 #the efficiency of transformers

@@ -12,18 +12,16 @@ include("eens/eens_functions.jl")
 include("post_process/pp_functions.jl")
 #A main function is used to encasulate code as outa function is global scope and should be avoided
 function main()
-    l=250
+    l=25
     S_min=50
-    S_max=2000
-    S=S_max
+    S_max=4000
     kv=138.0
-    csvfile=ppf_cblFileName(S_min,S_max,l,kv)
     wp=wndD_prof()
-    oss2oss=false
-    cb=cbl()
-    cb=cstF_cbl_ttl(l,S,kv,wp,oss2oss)
-    ppf_wrt2CblFile(csvfile,cb,S)
-    close(csvfile)
+    o2o=false
+    #returns [b,m,Smax,Smin] of mx+b where x is power
+    #Smin and Smax are same as initial argument if they were within range else max or min of range is returned
+    ab=cstF_linearize_cbl(l,S_min,S_max,kv,wp,o2o)
+    println(ab)
 end
 
 main()
