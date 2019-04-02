@@ -1,5 +1,28 @@
-#structures used for equipment are specified in this file
+#data structures used for equipment are specified in this file
+#=##################################################################
+mutable struct xfm_costs
+   cpx::Float64
+   tlc::Float64
+   cm::Float64
+   eens::Float64
+   ttl::Float64
+end
+xfo_costs()=xfo_costs(0.0,0.0,0.0,0.0,0.0)
 ###################################################################
+mutable struct xfm
+   mva::Float64
+   num::Float64
+   eta::Float64
+   hkv::Float64
+   lkv::Float64
+   fr::Float64
+   mttr::Float64
+   mc::Float64
+   results::xfo_costs
+end
+xfo()=xfo(0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,xfo_costs())=#
+######################################################################################################################################
+######################################################################################################################################
 #the structure of costs for a cable
 mutable struct cbl_costs
    qc::Float64
