@@ -2,6 +2,39 @@
 This file contains the input data for equipment used
 =#
 ########################################################
+#sets owpp power factor
+function eqpF_pf()
+    return 1.0
+end
+####################transformers########################
+function  eqpD_xfo_opt()
+    xfos=Array{Float64,1}()
+    for i=10:10:1000
+        push!(xfos,i)
+    end
+    return xfos
+end
+########################################################
+#Set maximum of transformers possible in parallel
+function eqpD_MAXxfos()
+    return 4
+end
+########################################################
+#the efficiency of transformers
+function eqpD_xEFF()
+    eta=0.994
+    return eta
+end
+########################################################
+#failure data for transformers
+function eqpD_xfo_fail(x)
+    x.fr=0.03#/yr
+    x.mttr=6.0#month
+    x.mc=2.8#
+    return nothing
+end
+########################################################
+########################################################
 #set the system AC frequency
 function eqpD_freq()
     return 50.0
@@ -11,12 +44,7 @@ end
 function eqpD_MAXcbls()
     return 12
 end
-########################################################
-#the efficiency of transformers
-function eqpD_xEFF()
-    eta=0.994
-    return eta
-end
+
 ########################################################
 #138kV cables
 function eqpD_138cbl_opt(cbls,km)
@@ -81,8 +109,8 @@ function eqpD_300cbl_opt(cbls)
 end
 ########################################################
 #Sets the limits that cables will be sized as a % of OWPP capacity
-function eqpD_cbl_lims()
-    return [0.9,1.25]
+function eqpD_eqp_lims()
+    return [0.9,1.5]
 end
 ########################################################
 #failure data for cables

@@ -35,7 +35,7 @@ function cstD_cfs()
     #fixed DC cost
     ks.FC_dc=25.0*p2e
     #penalization factor for different than 2 xfrms
-    ks.dc=0.2*p2e
+    ks.dc=0.2
     #generating plant variable cost
     ks.f_ct=0.02*p2e
     #substructure variable cost

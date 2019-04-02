@@ -76,7 +76,7 @@ end
 function eqpF_cbl_sel(cbls,S,l)
     cbls_2use=[]
 #Get limits and max cables possible in parallel - specified in eqp_data.jl
-    lims=eqpD_cbl_lims()
+    lims=eqpD_eqp_lims()
     parCmax=eqpD_MAXcbls()
     for i in cbls
         for j=1:parCmax
@@ -87,4 +87,31 @@ function eqpF_cbl_sel(cbls,S,l)
     end
     return cbls_2use
 end
-########################################################
+########################################################################################################################################################################
+########################################################################################################################################################################
+#built chosen sizes into transformer structured array
+function eqpF_xfo_struct(s,num)
+    xfm=xfo()
+    xfm.mva=s
+    xfm.num=num
+    xfm.eta=eqpD_xEFF()
+#Set failure data
+    eqpD_xfo_fail(xfm)
+    return xfm
+end
+###########################################################################
+#Selects sets of transformers that satisfy power requirements given limits
+function eqpF_xfo_sel(xfos,S)
+    xfms_2use=Array{xfo,1}()
+#Get limits and max cables possible in parallel - specified in eqp_data.jl
+    lims=eqpD_eqp_lims()
+    parXmax=eqpD_MAXxfos()
+    for i in xfos
+        for j=1:parXmax
+            if ((j*i)>lims[1]*S && (j*i)<lims[2]*S)
+                push!(xfms_2use,eqpF_xfo_struct(i,j))
+            end
+        end
+    end
+    return xfms_2use
+end

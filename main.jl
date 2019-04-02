@@ -11,7 +11,7 @@ include("wind/wnd_functions.jl")
 include("eens/eens_functions.jl")
 include("post_process/pp_functions.jl")
 #A main function is used to encasulate code as outa function is global scope and should be avoided
-function main()
+function lcbl()
     l=25
     S_min=50
     S_max=4000
@@ -23,5 +23,12 @@ function main()
     ab=cstF_linearize_cbl(l,S_min,S_max,kv,wp,o2o)
     println(ab)
 end
-
-main()
+function xfomr()
+    S=1000
+    xfm=xfo()
+    wp=wndD_prof()
+    xfm=cstF_oss_ttl(S,wp)
+    println(xfm)
+end
+#lcbl()
+xfomr()

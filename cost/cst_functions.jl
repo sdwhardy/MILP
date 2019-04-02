@@ -4,6 +4,51 @@ the cost of the OWPP and manipulate cost data.
 It is devided into subsections based on type of
 equipment being costed.
 =#
+#######################################################################################################################################
+############# Transformers #######################
+function cstF_oss_ttl(S,wp)
+#get the cost factors
+    ks=cstD_cfs()
+#create transformer object
+    xfm=xfo()
+    xfm.results.ttl=Inf
+#get all available xformer sizes
+    xfos_all=eqpD_xfo_opt()
+#selsct combinations to calculate
+    xfos_2use=eqpF_xfo_sel(xfos_all,S)
+    for x in xfos_2use
+#capex
+        x.results.cpx=cstF_oss_cpx(x,ks)
+#cost of losses
+        x.results.tlc=cstF_xfo_tlc(x,S,ks,wp)
+#corrective maintenance
+        x.results.cm=cstF_eqp_cm(x,ks)
+#eens calculation
+        x.results.eens=eensF_eqpEENS(x,S,ks,wp)
+#totals the cable cost
+        x.results.ttl=cstF_Xttl(x.results)
+#store lowest cost option
+        if x.results.ttl<xfm.results.ttl
+            xfm=deepcopy(x)
+        end
+    end
+    return xfm
+end
+#############################################
+function cstF_oss_cpx(x,k)
+#OSS platform CAPEX Calculation
+    A=(1+k.dc*(x.num-2))
+    B=(k.f_ct+k.p_ct)
+    cpx=k.FC_ac+A*B*x.num*x.mva
+    return cpx
+end
+#############################################
+function cstF_xfo_tlc(xfo,S,ks,wp)
+#OSS tlc Calculation
+    pf=eqpF_pf()
+    tlc=S*pf*(1-xfo.eta)*ks.T_op*ks.E_op*wp.delta
+    return tlc
+end
 #=############# CABLES #######################
 Functions related to the cost of cables are in this section
 #############################################
@@ -116,7 +161,7 @@ function cstF_chkCblLms(l,S_min,S_max,kv,wp,o2o)
     end
     return S_min,S_max
 end
-#######################################################################################################################################
+##############################################
 function cstF_cbl_ttl(l,S,kv,wp,os)
     cbls_all=[]
     cbls_2use=[]
@@ -124,7 +169,7 @@ function cstF_cbl_ttl(l,S,kv,wp,os)
     cb=cbl()
 #Initialize to very high total for comparison
     cb.results.ttl=Inf
-#create an object of type ks
+#get the cost factors
     ks=cstD_cfs()
 #returns all base data available for kv cables
     cbls_all=eqpF_cbl_opt(kv,cbls_all,l)
@@ -204,6 +249,12 @@ end
 #sums all cable costs and returns the total
 function cstF_CBLttl(res)
     ttl=res.rlc+res.qc+res.cbc+res.cm+res.eens
+    return ttl
+end
+#############################################
+#sums all transformer costs and returns the total
+function cstF_Xttl(res)
+    ttl=res.cpx+res.tlc+res.cm+res.eens
     return ttl
 end
 #############################################

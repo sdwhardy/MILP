@@ -1,7 +1,7 @@
 #=
 This file defines the structure of any objects associated with costs
 =###################################################
-mutable struct cbl_costs
+#=mutable struct cbl_costs
    qc::Float64
    cbc::Float64
    rlc::Float64
@@ -9,7 +9,7 @@ mutable struct cbl_costs
    eens::Float64
    ttl::Float64
 end
-cbl_costs()=cbl_costs(0.0,0.0,0.0,0.0,0.0,0.0)
+cbl_costs()=cbl_costs(0.0,0.0,0.0,0.0,0.0,0.0)=#
 ###################################################
 #an object that contains cost components and totals calculated
 mutable struct results
