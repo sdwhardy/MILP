@@ -9,7 +9,7 @@ end
 ####################transformers########################
 function  eqpD_xfo_opt()
     xfos=Array{Float64,1}()
-    for i=10:10:1000
+    for i=50:10:1000
         push!(xfos,i)
     end
     return xfos
