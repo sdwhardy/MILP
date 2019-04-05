@@ -20,6 +20,7 @@ mutable struct cbl
    volt::Float64
    ohm::Float64
    farrad::Float64
+   henry::Float64
    cost::Float64
    num::Float64
    fr::Float64
@@ -27,7 +28,7 @@ mutable struct cbl
    mc::Float64
    results::cbl_costs
 end
-cbl()=cbl(0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,cbl_costs())
+cbl()=cbl(0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,cbl_costs())
 ######################################################################################################################################
 #the structure used for a owpp (cable and xfm)
 mutable struct owpp

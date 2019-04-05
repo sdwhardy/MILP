@@ -1,13 +1,13 @@
 #Includes all dependancies
 #All data structures
-include("cost/cst_structure.jl")
-include("wind/wnd_structure.jl")
+include("cost/cst_structure.jl")#cost
+include("wind/wnd_structure.jl")#wind
 include("eqp/eqp_structure.jl")#must be included after cst and wind strucs
 
 #input data
-include("eqp/eqp_data.jl")
-include("cost/cst_data.jl")
-include("wind/wnd_data.jl")
+include("eqp/eqp_data.jl")#equipment
+include("cost/cst_data.jl")#cost
+include("wind/wnd_data.jl")#wind
 #functions
 include("cost/cst_functions.jl")#cost
 include("eqp/eqp_functions.jl")#equipment
@@ -28,7 +28,9 @@ end
 function xfmr_cbl_cost(l,S,kv,wp,o2o)
     arc=cstF_cblWT_ttl(l,S,kv,wp,o2o)
     print("arc cost: ")
-    println(arc)
+    eqpF_cblB(arc.cable)
+    println(arc.cable.ohm*l)
+    println(arc.cable.henry)
     #println(S)
 end
 #linearization

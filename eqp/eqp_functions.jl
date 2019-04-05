@@ -61,7 +61,8 @@ function eqpF_cbl_struct(cb,km,num)
     cbl_data.amp=cb[5]
     cbl_data.cost=cb[6]
     cbl_data.length=km
-    cbl_data.mva=cb[7]
+    cbl_data.henry=2*pi*eqpD_freq()*cb[7]*10^-3*km
+    cbl_data.mva=cb[8]
     cbl_data.num=num
 #Set failure data
     eqpD_cbl_fail(cbl_data)
@@ -80,12 +81,22 @@ function eqpF_cbl_sel(cbls,S,l)
     parCmax=eqpD_MAXcbls()
     for i in cbls
         for j=1:parCmax
-            if ((j*i[7])>lims[1]*S && (j*i[7])<lims[2]*S)
+            if ((j*i[8])>lims[1]*S && (j*i[8])<lims[2]*S)
                 push!(cbls_2use,eqpF_cbl_struct(i,l,j))
             end
         end
     end
     return cbls_2use
+end
+#####################################################
+#cable suceptance
+function eqpF_cblB(cb)
+    println(cb.farrad)
+    x=(abs(cb.henry-(1/(2*pi*50*cb.length*cb.farrad))))^2
+    print("x: ")
+    println(x)
+    b=(-1*cb.henry)/abs(cb.henry^2+(cb.ohm*cb.length)^2)
+    return b
 end
 ########################################################################################################################################################################
 ########################################################################################################################################################################
