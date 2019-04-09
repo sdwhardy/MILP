@@ -7,9 +7,8 @@ equipment being costed.
 #######################################################################################################################################
 ################################################# Transformers ########################################################################
 #######################################################################################################################################
-
-#cost of single offhore platform without considering any cable
-function cstF_oss_ttl(S,wp)
+#OSS/PCC transformer cost
+function cstF_xfm_ttl(S,wp,o2o)
     ks=cstD_cfs()#get the cost factors
     xfm=xfo()#create transformer object
     xfm.results.ttl=Inf
@@ -17,7 +16,12 @@ function cstF_oss_ttl(S,wp)
     xfos_2use=eqpF_xfo_sel(xfos_all,S)#select combinations to calculate
 
     for x in xfos_2use
-        x.results.cpx=cstF_oss_cpx(x,ks)#capex
+        if o2o==true
+            x.results.cpx=cstF_oss_cpx(x,ks)#capex oss
+        else
+            x.results.cpx=cstF_pcc_cpx(x)#capex pcc
+        end
+
         x.results.tlc=cstF_xfo_tlc(x,S,ks,wp)#cost of losses
         x.results.cm=cstF_eqp_cm(x,ks)#corrective maintenance
         x.results.eens=eensF_eqpEENS(x,S,ks,wp)#eens calculation
@@ -27,7 +31,6 @@ function cstF_oss_ttl(S,wp)
             xfm=deepcopy(x)
         end
     end
-
     return xfm
 end
 #############################################
@@ -39,12 +42,26 @@ function cstF_oss_cpx(x,k)
     return cpx
 end
 #############################################
-#OSS Losses Calculation
+#PCC platform CAPEX Calculation
+function cstF_pcc_cpx(x)
+    cpx=0.02621*(x.mva*x.num)^0.7513
+    return cpx
+end
+
+#############################################
+#xfm Losses Calculation
 function cstF_xfo_tlc(xfo,S,ks,wp)
-    pf=eqpF_pf()
+    pf=eqpD_pf()
     tlc=S*pf*(1-xfo.eta)*ks.T_op*ks.E_op*wp.delta
     return tlc
 end
+#############################################
+#sums all transformer costs and returns the total
+function cstF_Xttl(res)
+    ttl=res.cpx+res.tlc+res.cm+res.eens
+    return ttl
+end
+#############################################
 #######################################################################################################################################
 ########################################## CABLES #####################################################################################
 #######################################################################################################################################
@@ -54,8 +71,136 @@ l is the length of the cable, S is the power to be transmitted,
 kv is the voltage rating of the cable, wp is an object that describes
 the wind profile, os is a binary variable that which is true if a cable
 connects 2 OSS and false if from OSS to PCC=#
+##############################################
+#Cost of optimal cable under l,S,kv,wp,os without considering an OSS
+function cstF_cbl_ttl(l,S,kv,wp,os)
+    cbls_all=[]
+    cbls_2use=[]
+    cb=cbl()#create 1 object of type cbl_costs
+    cb.results.ttl=Inf#Initialize to very high total for comparison
+    ks=cstD_cfs()#get the cost factors
+    cbls_all=eqpF_cbl_opt(kv,cbls_all,l)#returns all base data available for kv cables
+    cbls_2use=eqpF_cbl_sel(cbls_all,S,l)#Selects 1 to ...(adjust in data) of the cables in parallel appropriate for reuired capacity
 
-###################################################################
+    for i in cbls_2use
+        i.results.cbc=cstF_cbl_cpx(i)#capex
+        i.results.qc=cstF_ACcbl_q(i,os,ks)#cost of compensastion
+        i.results.rlc=cstF_ACcbl_rlc(i,S,ks,wp)#cost of losses
+        i.results.cm=cstF_eqp_cm(i,ks)#corrective maintenance
+        i.results.eens=eensF_eqpEENS(i,S,ks,wp)#eens calculation
+        i.results.ttl=cstF_CBLttl(i.results)#totals the cable cost
+    #store lowest cost option
+        if i.results.ttl<cb.results.ttl
+            cb=deepcopy(i)
+        end
+    end
+#return optimal cable object
+    return cb
+end
+#############################################
+#CAPEX of cable
+function cstF_cbl_cpx(cbl)
+    cbc=cbl.length*cbl.num*cbl.cost
+    return cbc
+end
+#############################################
+#Ac compensation cost
+function cstF_ACcbl_q(cbl,os,ks)
+    cstD_QC(os,ks)
+#div sets compensation to 50-50 split
+    f=eqpD_freq()
+    div=0.5
+    A=cbl.farrad*cbl.length*cbl.num
+    Q=2*pi*f*cbl.volt^2*A
+    Q_oss=Q*div
+    Q_pcc=Q*(1-div)
+    qc=ks.Qc_oss*Q_oss+ks.Qc_pcc*Q_pcc
+    return qc
+end
+#############################################
+#Ac cable loss cost
+function cstF_ACcbl_rlc(cbl,s,ks,wp)
+    eta=eqpD_xEFF()
+#eta is the efficiencu of a feeder transformer, s power to transmit
+    A=s*eta
+#cable current
+    B=cbl.volt*sqrt(3)
+    I=A/B
+#cable resistance
+    R=(cbl.length*cbl.ohm)/(cbl.num)
+#I^2R losses times cost factores
+#delta is related to wind profile, T_op lifetime hours and E_op cost of energy
+    rlc=I^2*R*ks.T_op*ks.E_op*wp.delta
+    return rlc
+end
+#############################################
+#sums all cable costs and returns the total
+function cstF_CBLttl(res)
+    ttl=res.rlc+res.qc+res.cbc+res.cm+res.eens
+    return ttl
+end
+##########################################################################################
+############## WIND FARM #################################################################
+##########################################################################################
+#Cost of optimal cable under l,S,kv,wp,os AND considering an OSS
+function cstF_cblWT_ttl(l,S,kv,wp,os)
+    cbls_all=[]
+    cbls_2use=[]
+    cb=cbl()#create 1 object of type cbl_costs
+    xfm=xfo()
+    xfm=cstF_xfm_ttl(S,wp,os)#get transformer
+    cb.results.ttl=Inf#Initialize cable to very high total for comparison
+    ks=cstD_cfs()#get the cost factors
+    cbls_all=eqpF_cbl_opt(kv,cbls_all,l)#returns all base data available for kv cables
+    cbls_2use=eqpF_cbl_sel(cbls_all,S,l)#Selects 1 to 10 of the cables in parallel appropriate for reuired capacity
+
+# loop through all cables
+    for i in cbls_2use
+        i.results.cbc=cstF_cbl_cpx(i)#capex
+        i.results.qc=cstF_ACcbl_q(i,os,ks)#cost of compensastion
+        i.results.rlc=cstF_ACcbl_rlc(i,S,ks,wp)#cost of losses
+        i.results.cm=cstF_eqp_cm(i,ks)#corrective maintenance
+        i.results.eens=eensF_EENS(xfm,i,S,ks,wp)#eens calculation
+        i.results.ttl=cstF_CBLttl(i.results)#totals the cable cost
+        #store lowest cost option
+        if i.results.ttl<cb.results.ttl
+            cb=deepcopy(i)
+        end
+    end
+
+#Store values as an owpp object and return
+    arc=owpp()
+    arc.mva=S
+    arc.km=l
+    arc.wp=wp
+    arc.cable=cb
+    arc.xfm=xfm
+    cstF_owpp_results(arc)#summarizes final values
+    return arc#return optimal cable and transformer
+end
+#############################################
+#summarizes owpp resulst concisely
+function cstF_owpp_results(owp)
+    owp.costs.cpx=owp.xfm.results.cpx+owp.cable.results.cbc+owp.cable.results.qc
+    owp.costs.loss=owp.xfm.results.tlc+owp.cable.results.rlc
+    owp.costs.opex=owp.cable.results.eens+owp.xfm.results.cm+owp.cable.results.cm#don't add xfm eens already included
+    owp.costs.ttl=owp.costs.cpx+owp.costs.opex+owp.costs.loss
+    owp.cable.results.eens=owp.cable.results.eens-owp.xfm.results.eens#adjusts cable eens to validate sum
+end
+#############################################
+#corrective maintenance of equipment
+#eq is the equipment, k are the cost factors
+function cstF_eqp_cm(eq,k)
+    A=(eq.num*eq.mc)
+    B=(1/eq.fr)
+#changes time base of mttr of equipment: mnth-hrs/yr-hrs
+    C=(eq.mttr*30.417*24.0)/8760.0
+    cm=k.cf*(A/(B+C))
+    return cm
+end
+#########################################################################################
+################################## Linearization ########################################
+#########################################################################################
 #picks points along the range to calculate
 function cstF_points(mn,mx)
     points=Array{Float64,1}()
@@ -165,139 +310,8 @@ function cstF_chkCblLms(l,S_min,S_max,kv,wp,o2o)
     end
     return S_min,S_max
 end
-##############################################
-#Cost of optimal cable under l,S,kv,wp,os without considering an OSS
-function cstF_cbl_ttl(l,S,kv,wp,os)
-    cbls_all=[]
-    cbls_2use=[]
-    cb=cbl()#create 1 object of type cbl_costs
-    cb.results.ttl=Inf#Initialize to very high total for comparison
-    ks=cstD_cfs()#get the cost factors
-    cbls_all=eqpF_cbl_opt(kv,cbls_all,l)#returns all base data available for kv cables
-    cbls_2use=eqpF_cbl_sel(cbls_all,S,l)#Selects 1 to ...(adjust in data) of the cables in parallel appropriate for reuired capacity
+############################################################################################
 
-    for i in cbls_2use
-        i.results.cbc=cstF_cbl_cpx(i)#capex
-        i.results.qc=cstF_ACcbl_q(i,os,ks)#cost of compensastion
-        i.results.rlc=cstF_ACcbl_rlc(i,S,ks,wp)#cost of losses
-        i.results.cm=cstF_eqp_cm(i,ks)#corrective maintenance
-        i.results.eens=eensF_eqpEENS(i,S,ks,wp)#eens calculation
-        i.results.ttl=cstF_CBLttl(i.results)#totals the cable cost
-    #store lowest cost option
-        if i.results.ttl<cb.results.ttl
-            cb=deepcopy(i)
-        end
-    end
-#return optimal cable object
-    return cb
-end
-##############################################
-#Cost of optimal cable under l,S,kv,wp,os AND considering an OSS
-function cstF_cblWT_ttl(l,S,kv,wp,os)
-    cbls_all=[]
-    cbls_2use=[]
-    cb=cbl()#create 1 object of type cbl_costs
-    xfm=xfo()
-    xfm=cstF_oss_ttl(S,wp)#get transformer
-    cb.results.ttl=Inf#Initialize cable to very high total for comparison
-    ks=cstD_cfs()#get the cost factors
-    cbls_all=eqpF_cbl_opt(kv,cbls_all,l)#returns all base data available for kv cables
-    cbls_2use=eqpF_cbl_sel(cbls_all,S,l)#Selects 1 to 10 of the cables in parallel appropriate for reuired capacity
-
-# loop through all cables
-    for i in cbls_2use
-        i.results.cbc=cstF_cbl_cpx(i)#capex
-        i.results.qc=cstF_ACcbl_q(i,os,ks)#cost of compensastion
-        i.results.rlc=cstF_ACcbl_rlc(i,S,ks,wp)#cost of losses
-        i.results.cm=cstF_eqp_cm(i,ks)#corrective maintenance
-        i.results.eens=eensF_EENS(xfm,i,S,ks,wp)#eens calculation
-        i.results.ttl=cstF_CBLttl(i.results)#totals the cable cost
-        #store lowest cost option
-        if i.results.ttl<cb.results.ttl
-            cb=deepcopy(i)
-        end
-    end
-
-#Store values as an owpp object and return
-    arc=owpp()
-    arc.mva=S
-    arc.km=l
-    arc.wp=wp
-    arc.cable=cb
-    arc.xfm=xfm
-    cstF_owpp_results(arc)#summarizes final values
-    return arc#return optimal cable and transformer
-end
-#############################################
-#summarizes owpp resulst concisely
-function cstF_owpp_results(owp)
-    owp.costs.cpx=owp.xfm.results.cpx+owp.cable.results.cbc+owp.cable.results.qc
-    owp.costs.loss=owp.xfm.results.tlc+owp.cable.results.rlc
-    owp.costs.opex=owp.cable.results.eens+owp.xfm.results.cm+owp.cable.results.cm#don't add xfm eens already included
-    owp.costs.ttl=owp.costs.cpx+owp.costs.opex+owp.costs.loss
-end
-#############################################
-#CAPEX of cable
-function cstF_cbl_cpx(cbl)
-    cbc=cbl.length*cbl.num*cbl.cost
-    return cbc
-end
-#############################################
-#Ac compensation cost
-function cstF_ACcbl_q(cbl,os,ks)
-    cstD_QC(os,ks)
-#div sets compensation to 50-50 split
-    f=eqpD_freq()
-    div=0.5
-    A=cbl.farrad*cbl.length*cbl.num
-    Q=2*pi*f*cbl.volt^2*A
-    Q_oss=Q*div
-    Q_pcc=Q*(1-div)
-    qc=ks.Qc_oss*Q_oss+ks.Qc_pcc*Q_pcc
-    return qc
-end
-#############################################
-#Ac cable loss cost
-function cstF_ACcbl_rlc(cbl,s,ks,wp)
-    eta=eqpD_xEFF()
-#eta is the efficiencu of a feeder transformer, s power to transmit
-    A=s*eta
-#cable current
-    B=cbl.volt*sqrt(3)
-    I=A/B
-#cable resistance
-    R=(cbl.length*cbl.ohm)/(cbl.num)
-#I^2R losses times cost factores
-#delta is related to wind profile, T_op lifetime hours and E_op cost of energy
-    rlc=I^2*R*ks.T_op*ks.E_op*wp.delta
-    return rlc
-end
-#############################################
-#generic functions used in calculations for more than 1 specified piece of equipment follow
-############## EQUIPMENT ####################
-#corrective maintenance of equipment
-#eq is the equipment, k are the cost factors
-function cstF_eqp_cm(eq,k)
-    A=(eq.num*eq.mc)
-    B=(1/eq.fr)
-#changes time base of mttr of equipment: mnth-hrs/yr-hrs
-    C=(eq.mttr*30.417*24.0)/8760.0
-    cm=k.cf*(A/(B+C))
-    return cm
-end
-#############################################
-#sums all cable costs and returns the total
-function cstF_CBLttl(res)
-    ttl=res.rlc+res.qc+res.cbc+res.cm+res.eens
-    return ttl
-end
-#############################################
-#sums all transformer costs and returns the total
-function cstF_Xttl(res)
-    ttl=res.cpx+res.tlc+res.cm+res.eens
-    return ttl
-end
-#############################################
 
 
 
@@ -353,4 +367,50 @@ end
         println("XFRM Changed!!!!")
     end
     return xfm,cb
+end=#
+#################################################
+#=cost of single offhore platform without considering any cable
+function cstF_pcc_ttl(S,wp)
+    ks=cstD_cfs()#get the cost factors
+    xfm=xfo()#create transformer object
+    xfm.results.ttl=Inf
+    xfos_all=eqpD_xfo_opt()#get all available xformer sizes
+    xfos_2use=eqpF_xfo_sel(xfos_all,S)#select combinations to calculate
+
+    for x in xfos_2use
+        x.results.cpx=cstF_pcc_cpx(x)#capex
+        x.results.tlc=cstF_xfo_tlc(x,S,ks,wp)#cost of losses
+        x.results.cm=cstF_eqp_cm(x,ks)#corrective maintenance
+        x.results.eens=eensF_eqpEENS(x,S,ks,wp)#eens calculation
+        x.results.ttl=cstF_Xttl(x.results)#totals the cable cost
+        #store lowest cost option
+        if x.results.ttl<xfm.results.ttl
+            xfm=deepcopy(x)
+        end
+    end
+
+    return xfm
+end
+#############################################
+#cost of single offhore platform without considering any cable
+function cstF_oss_ttl(S,wp)
+    ks=cstD_cfs()#get the cost factors
+    xfm=xfo()#create transformer object
+    xfm.results.ttl=Inf
+    xfos_all=eqpD_xfo_opt()#get all available xformer sizes
+    xfos_2use=eqpF_xfo_sel(xfos_all,S)#select combinations to calculate
+
+    for x in xfos_2use
+        x.results.cpx=cstF_oss_cpx(x,ks)#capex
+        x.results.tlc=cstF_xfo_tlc(x,S,ks,wp)#cost of losses
+        x.results.cm=cstF_eqp_cm(x,ks)#corrective maintenance
+        x.results.eens=eensF_eqpEENS(x,S,ks,wp)#eens calculation
+        x.results.ttl=cstF_Xttl(x.results)#totals the cable cost
+        #store lowest cost option
+        if x.results.ttl<xfm.results.ttl
+            xfm=deepcopy(x)
+        end
+    end
+
+    return xfm
 end=#

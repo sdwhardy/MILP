@@ -14,26 +14,32 @@ include("eqp/eqp_functions.jl")#equipment
 include("wind/wnd_functions.jl")#wind profile
 include("eens/eens_functions.jl")#EENS calc
 include("post_process/pp_functions.jl")#Post processing
-
-function cable_cost(l,S,kv,wp,o2o)
+##################################################################
+#################### Cost of cable with no transformers #################
+function cbl_cost(l,S,kv,wp,o2o)
     cb=cstF_cbl_ttl(l,S,kv,wp,o2o)
     print("Cable: ")
-    println(cb)
+    println(cb.results.ttl)
 end
-function xfmr_cost(S,wp)
-    xfm=cstF_oss_ttl(S,wp)
+
+#################### Cost of transformer with no cables #################
+function xfmr_cost(S,wp,o2o)
+    xfm=cstF_xfm_ttl(S,wp,o2o)
     print("Xfm: ")
-    println(xfm)
+    println(xfm.results.ttl)
 end
+
+#################### Cost of transformer and cables #################
 function xfmr_cbl_cost(l,S,kv,wp,o2o)
     arc=cstF_cblWT_ttl(l,S,kv,wp,o2o)
-    print("arc cost: ")
-    eqpF_cblB(arc.cable)
-    println(arc.cable.ohm*l)
-    println(arc.cable.henry)
-    #println(S)
+    eqpD_xfoXR(kv,arc.xfm)
+    arc.cable.ohm=((arc.cable.ohm*l)/arc.cable.num)/eqpD_pu()[4]
+    arc.cable.xl=((arc.cable.xl*l)/arc.cable.num)/eqpD_pu()[4]
+    arc.cable.yc=arc.cable.yc*l*arc.cable.num*eqpD_pu()[4]
+    print("Xfm/Cbl: ")
+    println(arc.costs.ttl)
 end
-#linearization
+###################### linearization of cost ########################
 function lcbl_cost(l,kv,wp,o2o)
     S_min=50
     S_max=4000
@@ -43,19 +49,23 @@ function lcbl_cost(l,kv,wp,o2o)
     print("linear cable model: ")
     println(ab)
 end
+##################################################################
 #A main function is used to encasulate code as outa function is global scope and should be avoided
 function main()
-    l=200
-    S=500
-    kv=138.0
+    l=100
+    S=1000
+    kv=132
     wp=wndD_prof()
-    o2o=false
-    #cable_cost(l,S,kv,wp,o2o)
-    #xfmr_cost(S,wp)
+    #o2o=false#PCC transformer/ compensation 50-50 offshore-onshore
+    o2o=true#OSS transformer/ compensation all offshore
+    cbl_cost(l,S,kv,wp,o2o)
+    #xfmr_cost(S,wp,o2o)
+
     #for S=500:1:1500
-        xfmr_cbl_cost(l,S,kv,wp,o2o)
+    xfmr_cbl_cost(l,S,kv,wp,o2o)
     #end
-#cstF_linearize_cbl
-    #lcbl_cost(l,kv,wp,o2o)
+
+    #lcbl_cost(l,kv,wp,o2o)#cstF_linearize_cbl
 end
+########################################################################################
 main()

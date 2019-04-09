@@ -2,8 +2,18 @@
 This file contains the input data for equipment used
 =#
 ########################################################
+#sets PU values
+function eqpD_pu()
+    va=1000.0*10^6
+    v=132.0*10^3
+    i=(va)/(sqrt(3)*v)
+    z=v^2/va
+    y=1/z
+    return [va,v,i,z,y]
+end
+########################################################
 #sets owpp power factor
-function eqpF_pf()
+function eqpD_pf()
     return 1.0
 end
 ####################transformers########################
@@ -33,6 +43,28 @@ function eqpD_xfo_fail(x)
     x.mc=2.8#
     return nothing
 end
+#add percent impendance of transformer
+########################################################
+function eqpD_xfoXR(kv,x)
+#    400/132 - X=8% R=0.14% on 100MVA base
+#    275/132 - X=9% R=0.16% on 100MVA base #Source National grid
+    if kv == 400
+        X=0.08
+        R=0.0014
+    elseif kv == 220
+        X=0.09
+        R=0.0016
+#assumed values based on data given. needs to be updated
+elseif kv == 132
+        X=0.1
+        R=0.0018
+    else
+        error("kV doesn't match transformer for % impedance!")
+    end
+    mva=eqpD_pu()[1]
+    x.xl=eqpF_puChgBs(mva,X)
+    x.ohm=eqpF_puChgBs(mva,R)
+end
 ########################################################
 ########################################################
 #set the system AC frequency
@@ -47,7 +79,7 @@ end
 
 ########################################################
 #138kV cables
-function eqpD_138cbl_opt(cbls,km)
+function eqpD_132cbl_opt(cbls,km)
 #exchange rate
     p2e=cstD_xchg()
 #%kV,cm^2,mohms/km,nF/km,Amps,10^3 euros/km, capacity at km
@@ -61,7 +93,6 @@ function eqpD_138cbl_opt(cbls,km)
     alphbt=[a,b,c,d,e,f,g]
     alphbt=eqpF_cbls_caps(alphbt,km)
     cbls=eqpF_pushArray(cbls,alphbt)
-    println(cbls)
     return cbls
 end
 ########################################################
@@ -85,15 +116,16 @@ end
 function eqpD_400cbl_opt(cbls,km)
 #exchange rate
     p2e=cstD_xchg()
+    cores=1
 #%kV,cm^2,mohms/km,nF/km,Amps,10^3 euros/km, capacity at km
-    a=[400,500,40,117,776,1239*p2e,0.589]
-    b=[400,630,36,125,824,1323*p2e,0.561]
-    c=[400,800,31.4,130,870,1400*p2e,0.54]
-    d=[400,1000,26.5,140,932,1550*p2e,0.52]
-    e=[400,1200,22.1,170,986,1700*p2e,0.49]
-    f=[400,1400,18.9,180,1015,1850*p2e,0.47]
-    g=[400,1600,16.6,190,1036,2000*p2e,0.46]
-    h=[400,2000,13.2,200,1078,2150*p2e,0.44]
+    a=[400,500,40,117,776,1239*p2e,0.589*cores]
+    b=[400,630,36,125,824,1323*p2e,0.561*cores]
+    c=[400,800,31.4,130,870,1400*p2e,0.54*cores]
+    d=[400,1000,26.5,140,932,1550*p2e,0.52*cores]
+    e=[400,1200,22.1,170,986,1700*p2e,0.49*cores]
+    f=[400,1400,18.9,180,1015,1850*p2e,0.47*cores]
+    g=[400,1600,16.6,190,1036,2000*p2e,0.46*cores]
+    h=[400,2000,13.2,200,1078,2150*p2e,0.44*cores]
     alphbt=[a,b,c,d,e,f,g,h]
     alphbt=eqpF_cbls_caps(alphbt,km)
     cbls=eqpF_pushArray(cbls,alphbt)
