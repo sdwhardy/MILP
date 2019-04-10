@@ -14,6 +14,11 @@ include("eqp/eqp_functions.jl")#equipment
 include("wind/wnd_functions.jl")#wind profile
 include("eens/eens_functions.jl")#EENS calc
 include("post_process/pp_functions.jl")#Post processing
+
+using Distributions
+using StatsPlots
+using SpecialFunctions
+using Polynomials
 ##################################################################
 #################### Cost of cable with no transformers #################
 function cbl_cost(l,S,kv,wp,o2o)
@@ -38,6 +43,8 @@ function xfmr_cbl_cost(l,S,kv,wp,o2o)
     arc.cable.yc=arc.cable.yc*l*arc.cable.num*eqpD_pu()[4]
     print("Xfm/Cbl: ")
     println(arc.costs.ttl)
+    println()
+    println(arc.cable)
 end
 ###################### linearization of cost ########################
 function lcbl_cost(l,kv,wp,o2o)
@@ -55,15 +62,23 @@ function main()
     l=100
     S=1000
     kv=132
-    wp=wndD_prof()
+
+    mn=13
+    a=11.08
+    k=2.32
+    wp=wndF_wndPrf(mn,a,k)
+    #wp=wndF_wndPrf()
+
     #o2o=false#PCC transformer/ compensation 50-50 offshore-onshore
     o2o=true#OSS transformer/ compensation all offshore
-    cbl_cost(l,S,kv,wp,o2o)
-    #xfmr_cost(S,wp,o2o)
+    #cbl_cost(l,S,kv,wp,o2o)
+    xfmr_cost(S,wp,o2o)
 
     #for S=500:1:1500
     xfmr_cbl_cost(l,S,kv,wp,o2o)
     #end
+    plotly()
+    plot(wp.pu,wp.ce)
 
     #lcbl_cost(l,kv,wp,o2o)#cstF_linearize_cbl
 end
