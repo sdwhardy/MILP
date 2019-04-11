@@ -170,6 +170,7 @@ end
 #Default torque curve of the turbine
 #used only in case of specified wind profile other than the default
 function wndD_TrqCrv(wnd)
+wnd.co=24
     #wind speed
 wnd.wsp=[2.11
 2.57

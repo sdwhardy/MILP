@@ -66,8 +66,8 @@ function main()
     mn=13
     a=11.08
     k=2.32
-    wp=wndF_wndPrf(mn,a,k)
-    #wp=wndF_wndPrf()
+    #wp=wndF_wndPrf(mn,a,k)
+    wp=wndF_wndPrf()
 
     #o2o=false#PCC transformer/ compensation 50-50 offshore-onshore
     o2o=true#OSS transformer/ compensation all offshore

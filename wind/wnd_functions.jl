@@ -7,12 +7,11 @@ end
 #
 function wndF_wndPrf(mn, a, k)
     wnd=wind()#creates wind object
-    cut_off=24#change cuttoff speed here
+    wndD_TrqCrv(wnd)#returns turbine torque curve
     aque=100
     dis=MixtureModel(Weibull,[(k,a)])#Generates a weibull distribution of shape factors a,k
-    spds=[0:1/aque:cut_off]#builds array of wind speeds within turbine range
+    spds=[0:1/aque:wnd.co]#builds array of wind speeds within turbine range
     probs=sum(pdf.(dis, spds))/aque#maps the speeds to the wiebull distribution
-    wndD_TrqCrv(wnd)#calculates the output power of the turbine based on wind distribution
     pwr_prb=zeros(length(spds[]),2)
     #pud=findmax(wnd.pwr)[1]#finds the turbines max output level
 #loops through wind speeds and matches probability to power level

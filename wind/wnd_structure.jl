@@ -8,6 +8,7 @@ mutable struct wind
       ce::Array{Float64}
       delta::Float64
       lf::Float64
+      co::Float64
 end
-wind()=wind([],[],[],[],[],0.0,0.0)
+wind()=wind([],[],[],[],[],0.0,0.0,0.0)
 ###################################################
