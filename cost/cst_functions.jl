@@ -300,8 +300,8 @@ function cstF_chkCblLms(l,S_min,S_max,kv,wp,o2o)
     cbls_all=eqpF_cbl_opt(kv,cbls_all,l)
 
 #Checks upper range
-    if S_max>eqpD_MAXcbls()*cbls_all[length(cbls_all)][7]
-        S_max=eqpD_MAXcbls()*cbls_all[length(cbls_all)][7]
+    if S_max>eqpD_MAXcbls(cbls_all[1][1])*cbls_all[length(cbls_all)][7]
+        S_max=eqpD_MAXcbls(cbls_all[1][1])*cbls_all[length(cbls_all)][7]
     end
 
 #Checks lower range

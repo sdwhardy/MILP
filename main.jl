@@ -3,17 +3,20 @@
 include("cost/cst_structure.jl")#cost
 include("wind/wnd_structure.jl")#wind
 include("eqp/eqp_structure.jl")#must be included after cst and wind strucs
+include("layout/lo_structure.jl")#layout
 
 #input data
 include("eqp/eqp_data.jl")#equipment
 include("cost/cst_data.jl")#cost
 include("wind/wnd_data.jl")#wind
+include("layout/lo_data.jl")#layout
 #functions
 include("cost/cst_functions.jl")#cost
 include("eqp/eqp_functions.jl")#equipment
 include("wind/wnd_functions.jl")#wind profile
 include("eens/eens_functions.jl")#EENS calc
 include("post_process/pp_functions.jl")#Post processing
+include("layout/lo_functions.jl")#layout
 
 using Distributions
 using StatsPlots
@@ -59,9 +62,9 @@ end
 ##################################################################
 #A main function is used to encasulate code as outa function is global scope and should be avoided
 function main()
-    l=100
-    S=1000
-    kv=132
+    l=1
+    S=200
+    kv=33
 
     mn=13
     a=11.08
@@ -83,4 +86,5 @@ function main()
     #lcbl_cost(l,kv,wp,o2o)#cstF_linearize_cbl
 end
 ########################################################################################
-main()
+#main()
+lof_layoutOcn()
