@@ -97,6 +97,161 @@ function lof_shoreConnect(location)
     end
 end
 ################################################################################
+#find the boundary on the western side
+function lof_wBnd(bd,f,pnts)
+
+    thetas=Array{Float64,1}()
+    while (bd[length(bd)].x != f.x || bd[length(bd)].y != f.y)#loop until furthest point is used
+        for i in pnts
+            ang=atan((i.y-bd[length(bd)].y),(i.x-bd[length(bd)].x))
+            #if ang>=0
+                push!(thetas,ang)#calc angles between current point and remainder
+            #end
+        end
+        if length(thetas) != 0
+
+            pnt=findmax(thetas)[2]#select th eminimum angle
+
+            push!(bd,pnts[pnt])#chose this point as next boundary point
+            if pnts[pnt].x != f.x && pnts[pnt].y != f.y
+                deleteat!(pnts,pnt)#remove the used point
+            end
+            thetas=[]
+        end
+    end
+    return bd,pnts
+end
+################################################################################
+#find the boundary on the eastern side
+function lof_eBnd(bd,f,pnts)
+    thetas=Array{Float64,1}()
+    while (bd[length(bd)].x != f.x || bd[length(bd)].y != f.y)#loop until furthest point is used
+        for i in pnts
+            ang=atan((i.y-bd[length(bd)].y),(i.x-bd[length(bd)].x))
+            if ang>=0
+                push!(thetas,ang)#calc angles between current point and remainder
+            else
+                push!(thetas,2*pi)#ensure negative angles are not selected
+            end
+        end
+        if length(thetas) != 0
+            #println(thetas)
+            pnt=findmin(thetas)[2]#select th eminimum angle
+            #println(pnts[pnt])
+            push!(bd,pnts[pnt])#chose this point as next boundary point
+            if pnts[pnt].x != f.x && pnts[pnt].y != f.y
+                deleteat!(pnts,pnt)#remove the used point
+            end
+            thetas=[]
+        end
+    end
+    return bd,pnts
+end
+###############################################################################
+function lof_addBuff(bnd,buff,pccs)
+    for i in bnd
+        i.x=i.x+buff
+        for j in pccs
+            if i.x == j.x && i.y == j.y
+                 i.x=i.x-buff
+             end
+         end
+    end
+    return bnd
+end
+################################################################################
+#find the full boundary around the concessions
+function lof_ewbnd(ocn)
+    all=Array{xy,1}()
+    all_pcc=Array{xy,1}()
+    all_oss=Array{xy,1}()
+    Wbnd=Array{xy,1}()
+    Ebnd=Array{xy,1}()
+    strt=ocn.pccs[length(ocn.pccs)].coord.cnt#define 0 point
+    fnsh=ocn.reg.cnces[length(ocn.reg.cnces)].coord.cnt#define furthest concession
+    push!(Wbnd,strt)
+    push!(Ebnd,strt)
+#combine all points into single array for processing
+    for i=1:length(ocn.pccs)-1
+        push!(all_pcc,deepcopy(ocn.pccs[i].coord.cnt))
+        push!(all,all_pcc[length(all_pcc)])
+    end
+
+    for i in ocn.reg.cnces
+        #push!(all_oss,deepcopy(i.coord.cnt))
+        push!(all,deepcopy(i.coord.cnt))
+    end
+
+    Wbnd,all=lof_wBnd(Wbnd,fnsh,all)#finds western boundary
+    #println(Wbnd)
+    Ebnd,all=lof_eBnd(Ebnd,fnsh,deepcopy(all))#finds eastern boundary
+
+    buffer=loD_ewbuff()
+    Wbnd=lof_addBuff(Wbnd,-1*buffer,all_pcc)#add buffer to western boundary
+
+    Ebnd=lof_addBuff(Ebnd,buffer,all_pcc)#add buffer to eastern boundary
+
+    Ebnd=reverse(Ebnd,1)
+    for i in Ebnd
+        push!(Wbnd,i)
+    end
+    return Wbnd
+end
+################################################################################
+function lof_sbnd(ocn)
+    buffer=loD_sbuff()
+    cns=Array{Float64,1}()
+    for i in ocn.reg.cnces
+        push!(cns,i.coord.cnt.y)
+    end
+    tmp=findmin(cns)[2]
+    tmp1=findmax(cns)[2]
+    cns[tmp]=cns[tmp1]+10
+    cls0=deepcopy(ocn.reg.cnces[tmp].coord.cnt)
+    cls0.y=cls0.y-buffer
+    tmp=findmin(cns)[2]
+    cls1=deepcopy(ocn.reg.cnces[tmp].coord.cnt)
+    cls1.y=cls1.y-buffer
+    cns=[]
+    push!(cns,cls0)
+    push!(cns,cls1)
+    return cns
+end
+###############################################################################
+function lof_layoutOcn()
+    ocean=eez()
+    ocean.reg=lof_layoutZone()
+    lof_shoreConnect(ocean.pccs)
+    base=lof_bseCrd(ocean)
+    lof_dists(ocean,base)
+    os=lof_rotateOcn(ocean)
+    lof_slideOcn(ocean,os)
+    ocean.reg.bnd=lof_ewbnd(ocean)
+    ocean.reg.sth=lof_sbnd(ocean)
+    println(ocean.reg.sth)
+    #lof_cnsPeri(ocean.reg.cnces)
+    ppf_printOcn(ocean)
+end
+################################################################################
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+################################################################################
+############################## Removed Functions ###############################
+################################################################################
 #=function lof_cnsPeri(cns)
     hgts=[]
     wdts=[]
@@ -136,118 +291,4 @@ end
         println(cns[i].coord)
     end
 end=#
-################################################################################
-#find the boundary on the western side
-function lof_wBnd(bd,f,pnts)
-
-    thetas=Array{Float64,1}()
-    while (bd[length(bd)].x != f.x || bd[length(bd)].y != f.y)#loop until furthest point is used
-        for i in pnts
-            ang=atan((i.y-bd[length(bd)].y),(i.x-bd[length(bd)].x))
-            #if ang>=0
-                push!(thetas,ang)#calc angles between current point and remainder
-            #end
-        end
-        if length(thetas) != 0
-
-            pnt=findmax(thetas)[2]#select th eminimum angle
-
-            push!(bd,pnts[pnt])#chose this point as next boundary point
-            if pnts[pnt].x != f.x && pnts[pnt].y != f.y
-                deleteat!(pnts,pnt)#remove the used point
-            end
-            thetas=[]
-        end
-    end
-    return bd,pnts
-end
-################################################################################
-#find the boundary on the eastern side
-function lof_eBnd(bd,f,pnts)
-    thetas=Array{Float64,1}()
-    while (bd[length(bd)].x != f.x || bd[length(bd)].y != f.y)#loop until furthest point is used
-        for i in pnts
-            ang=atan((i.y-bd[length(bd)].y),(i.x-bd[length(bd)].x))
-            if ang>=0
-                push!(thetas,ang)#calc angles between current point and remainder
-            else
-                push!(thetas,2*pi)#ensure negative angles are not selected
-            end
-        end
-        if length(thetas) != 0
-            println(thetas)
-            pnt=findmin(thetas)[2]#select th eminimum angle
-            println(pnts[pnt])
-            push!(bd,pnts[pnt])#chose this point as next boundary point
-            if pnts[pnt].x != f.x && pnts[pnt].y != f.y
-                deleteat!(pnts,pnt)#remove the used point
-            end
-            thetas=[]
-        end
-    end
-    return bd,pnts
-end
-###############################################################################
-function lof_addBuff(bnd,buff,pccs)
-    for i in bnd
-        i.x=i.x+buff
-        for j in pccs
-            if i.x == j.x && i.y == j.y
-                 i.x=i.x-buff
-             end
-         end
-    end
-    return bnd
-end
-################################################################################
-#find the full boundary around the concessions
-function lof_bnd(ocn)
-    all=Array{xy,1}()
-    all_pcc=Array{xy,1}()
-    all_oss=Array{xy,1}()
-    Wbnd=Array{xy,1}()
-    Ebnd=Array{xy,1}()
-    strt=ocn.pccs[length(ocn.pccs)].coord.cnt#define 0 point
-    fnsh=ocn.reg.cnces[length(ocn.reg.cnces)].coord.cnt#define furthest concession
-    push!(Wbnd,strt)
-    push!(Ebnd,strt)
-#combine all points into single array for processing
-    for i=1:length(ocn.pccs)-1
-        push!(all_pcc,deepcopy(ocn.pccs[i].coord.cnt))
-        push!(all,all_pcc[length(all_pcc)])
-    end
-
-    for i in ocn.reg.cnces
-        #push!(all_oss,deepcopy(i.coord.cnt))
-        push!(all,deepcopy(i.coord.cnt))
-    end
-
-    Wbnd,all=lof_wBnd(Wbnd,fnsh,all)#finds western boundary
-    #println(Wbnd)
-    Ebnd,all=lof_eBnd(Ebnd,fnsh,deepcopy(all))#finds eastern boundary
-
-    buffer=1
-    Wbnd=lof_addBuff(Wbnd,-1*buffer,all_pcc)#add buffer to western boundary
-
-    Ebnd=lof_addBuff(Ebnd,buffer,all_pcc)#add buffer to eastern boundary
-
-    Ebnd=reverse(Ebnd,1)
-    for i in Ebnd
-        push!(Wbnd,i)
-    end
-    return Wbnd
-end
-################################################################################
-function lof_layoutOcn()
-    ocean=eez()
-    ocean.reg=lof_layoutZone()
-    lof_shoreConnect(ocean.pccs)
-    base=lof_bseCrd(ocean)
-    lof_dists(ocean,base)
-    os=lof_rotateOcn(ocean)
-    lof_slideOcn(ocean,os)
-    ocean.reg.bnd=lof_bnd(ocean)
-    #lof_cnsPeri(ocean.reg.cnces)
-    ppf_printOcn(ocean)
-end
 ################################################################################

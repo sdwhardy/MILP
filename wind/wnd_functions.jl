@@ -7,27 +7,28 @@ end
 #
 function wndF_wndPrf(mn, a, k)
     wnd=wind()#creates wind object
-    cut_off=24#change cuttoff speed here
+    trb=turb()#creates turbine object
+    #cut_off=trb.cout#change cuttoff speed here
     aque=100
     dis=MixtureModel(Weibull,[(k,a)])#Generates a weibull distribution of shape factors a,k
-    spds=[0:1/aque:cut_off]#builds array of wind speeds within turbine range
+    spds=[0:1/aque:trb.cout]#builds array of wind speeds within turbine range
     probs=sum(pdf.(dis, spds))/aque#maps the speeds to the wiebull distribution
-    wndD_TrqCrv(wnd)#calculates the output power of the turbine based on wind distribution
+    wndD_TrqCrv(trb)#calculates the output power of the turbine based on wind distribution
     pwr_prb=zeros(length(spds[]),2)
     #pud=findmax(wnd.pwr)[1]#finds the turbines max output level
 #loops through wind speeds and matches probability to power level
     for i=1:length(spds[])
-        for j = 1:length(wnd.wsp)
-            if spds[1][i]<=wnd.wsp[1] || spds[1][i]>wnd.wsp[length(wnd.wsp)]
+        for j = 1:length(trb.wsp)
+            if spds[1][i]<=trb.wsp[1] || spds[1][i]>trb.wsp[length(trb.wsp)]
                 pwr_prb[i,1]=0.0
                 pwr_prb[i,2]=probs[i]
                 break
-            elseif spds[1][i]==wnd.wsp[length(wnd.wsp)]
-                pwr_prb[i,1]=wnd.pwr[length(wnd.wsp)]
+            elseif spds[1][i]==trb.wsp[length(trb.wsp)]
+                pwr_prb[i,1]=trb.pwr[length(trb.wsp)]
                 pwr_prb[i,2]=probs[i]
                 break
-            elseif wnd.wsp[j]<=spds[1][i] && spds[][i]<=wnd.wsp[j+1]
-                pwr_prb[i,1]=eensF_intPole(spds[1][i],wnd.wsp[j],wnd.wsp[j+1],wnd.pwr[j],wnd.pwr[j+1])
+            elseif trb.wsp[j]<=spds[1][i] && spds[][i]<=trb.wsp[j+1]
+                pwr_prb[i,1]=eensF_intPole(spds[1][i],trb.wsp[j],trb.wsp[j+1],trb.pwr[j],trb.pwr[j+1])
                 pwr_prb[i,2]=probs[i]
                 break
             end
@@ -35,7 +36,7 @@ function wndF_wndPrf(mn, a, k)
     end
     pud=findmax(pwr_prb[:,1])[1]#finds the turbines max output level
     pwr_prb=wndD_unic(pwr_prb,pud)#reduces array to unic matches
-    graph=wndD_puVShrs(pwr_prb, wnd)#puts results in terms of PU and and hrs per year
+    graph=wndD_puVShrs(pwr_prb)#puts results in terms of PU and and hrs per year
     wndD_conENG(graph,wnd,pud)#constraint energy calc
     wndD_LDlss(pwr_prb, wnd)#calculates loss factor
     return wnd
@@ -81,7 +82,7 @@ function wndD_LDlss(div, wind)
 end
 ################################################################################
 #Caculates the PU out hours/yr curve
-function wndD_puVShrs(div, wind)
+function wndD_puVShrs(div)
   hours=div[:,2]/sum(div[:,2])*(365*24)#hourly probabilities
   pow_hrs=[div[:,1] hours]#power at set hours
   puVShrs=zeros(length(div[:,2]),2)

@@ -41,8 +41,9 @@ mutable struct region
       ncons::Float64
       cnces::Array{cnce}
       bnd::Array{xy}
+      sth::Array{xy}
 end
-region()=region(gps(),coord(),69.69,69.69,[],[])
+region()=region(gps(),coord(),69.69,69.69,[],[],[])
 ###################################################################
 mutable struct eez
       gps::gps
@@ -52,4 +53,14 @@ mutable struct eez
       coord::coord
 end
 eez()=eez(gps(),region(),69.69,[],coord())
+###################################################################
+mutable struct turb
+      wsp::Array{Float64}
+      pwr::Array{Float64}
+      dia::Float64
+      mva::Float64
+      cin::Float64
+      cout::Float64
+end
+turb()=turb([],[],69.69,69.69,69.69,69.69)
 ###################################################################

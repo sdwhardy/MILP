@@ -54,10 +54,16 @@ function ppf_printOcn(ocean)
 	end
 	xb=Array{Float64,1}()
 	yb=Array{Float64,1}()
-	println(ocean.reg.bnd)
+	#println(ocean.reg.bnd)
 	for i in ocean.reg.bnd
 		push!(xb,i.x)
 		push!(yb,i.y)
+	end
+	xc=Array{Float64,1}()
+	yc=Array{Float64,1}()
+	for i in ocean.reg.sth
+		push!(xc,i.x)
+		push!(yc,i.y)
 	end
     #x=[ocean.pccs[1].coord.cnt.x,ocean.pccs[2].coord.cnt.x,ocean.reg.cnces[1].coord.cnt.x,ocean.reg.cnces[2].coord.cnt.x]#,ocean.reg.cnces[3].coord.cnt.x,ocean.reg.cnces[4].coord.cnt.x,ocean.reg.cnces[5].coord.cnt.x,ocean.reg.cnces[6].coord.cnt.x,ocean.reg.cnces[7].coord.cnt.x,ocean.reg.cnces[8].coord.cnt.x]
     #y=[ocean.pccs[1].coord.cnt.y,ocean.pccs[2].coord.cnt.y,ocean.reg.cnces[1].coord.cnt.y,ocean.reg.cnces[2].coord.cnt.y]#,ocean.reg.cnces[3].coord.cnt.y,ocean.reg.cnces[4].coord.cnt.y,ocean.reg.cnces[5].coord.cnt.y,ocean.reg.cnces[6].coord.cnt.y,ocean.reg.cnces[7].coord.cnt.y,ocean.reg.cnces[8].coord.cnt.y]
@@ -71,6 +77,7 @@ function ppf_printOcn(ocean)
 	plotly()
 	plot(x,y,seriestype=:scatter,xticks = xlimin:5:xlimax,xlims=(xlimin,xlimax),yticks = ylimin:5:ylimax)
 	plot!(xb,yb,xticks = xlimin:5:xlimax,xlims=(xlimin,xlimax),yticks = ylimin:5:ylimax)
+	plot!(xc,yc,xticks = xlimin:5:xlimax,xlims=(xlimin,xlimax),yticks = ylimin:5:ylimax)
 
     #=i=1
     x1=[ocean.reg.cnces[i].coord.nw.x,ocean.reg.cnces[i].coord.ne.x,ocean.reg.cnces[i].coord.se.x,ocean.reg.cnces[i].coord.sw.x,ocean.reg.cnces[i].coord.nw.x]
