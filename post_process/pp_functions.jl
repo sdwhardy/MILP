@@ -59,25 +59,26 @@ function ppf_printOcn(ocean)
 		push!(xb,i.x)
 		push!(yb,i.y)
 	end
-	xc=Array{Float64,1}()
+	
+	#=xc=Array{Float64,1}()
 	yc=Array{Float64,1}()
 	for i in ocean.reg.sth
 		push!(xc,i.x)
 		push!(yc,i.y)
-	end
+	end=#
     #x=[ocean.pccs[1].coord.cnt.x,ocean.pccs[2].coord.cnt.x,ocean.reg.cnces[1].coord.cnt.x,ocean.reg.cnces[2].coord.cnt.x]#,ocean.reg.cnces[3].coord.cnt.x,ocean.reg.cnces[4].coord.cnt.x,ocean.reg.cnces[5].coord.cnt.x,ocean.reg.cnces[6].coord.cnt.x,ocean.reg.cnces[7].coord.cnt.x,ocean.reg.cnces[8].coord.cnt.x]
     #y=[ocean.pccs[1].coord.cnt.y,ocean.pccs[2].coord.cnt.y,ocean.reg.cnces[1].coord.cnt.y,ocean.reg.cnces[2].coord.cnt.y]#,ocean.reg.cnces[3].coord.cnt.y,ocean.reg.cnces[4].coord.cnt.y,ocean.reg.cnces[5].coord.cnt.y,ocean.reg.cnces[6].coord.cnt.y,ocean.reg.cnces[7].coord.cnt.y,ocean.reg.cnces[8].coord.cnt.y]
 	#println(findmax(y)[1])
 	#println(findmax(y)[2])
 	os=1
-	xlimax=trunc(Int,findmax(xb)[1])+os
-	ylimax=trunc(Int,findmax(yb)[1])+os
-	xlimin=trunc(Int,findmin(xb)[1])-os
-	ylimin=trunc(Int,findmin(yb)[1])-os
+	xlimax=trunc(Int,findmax(x)[1])+os
+	ylimax=trunc(Int,findmax(y)[1])+os
+	xlimin=trunc(Int,findmin(x)[1])-os
+	ylimin=trunc(Int,findmin(y)[1])-os
 	plotly()
 	plot(x,y,seriestype=:scatter,xticks = xlimin:5:xlimax,xlims=(xlimin,xlimax),yticks = ylimin:5:ylimax)
 	plot!(xb,yb,xticks = xlimin:5:xlimax,xlims=(xlimin,xlimax),yticks = ylimin:5:ylimax)
-	plot!(xc,yc,xticks = xlimin:5:xlimax,xlims=(xlimin,xlimax),yticks = ylimin:5:ylimax)
+	#plot!(xc,yc,xticks = xlimin:5:xlimax,xlims=(xlimin,xlimax),yticks = ylimin:5:ylimax)
 
     #=i=1
     x1=[ocean.reg.cnces[i].coord.nw.x,ocean.reg.cnces[i].coord.ne.x,ocean.reg.cnces[i].coord.se.x,ocean.reg.cnces[i].coord.sw.x,ocean.reg.cnces[i].coord.nw.x]

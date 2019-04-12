@@ -24,7 +24,7 @@ function lod_cncesGps()
     push!(c1,(51.56+51.53997)/2)
     push!(c,c1)
     #Rentel
-    #=push!(c2,2.939972)
+    push!(c2,2.939972)
     push!(c2,51.59)
     push!(c,c2)
     #Northwind
@@ -46,7 +46,7 @@ function lod_cncesGps()
     #Mermaid
     push!(c7,2.74)
     push!(c7,51.71997)
-    push!(c,c7)=#
+    push!(c,c7)#==#
     return c
 end
 ################################################################################
@@ -55,26 +55,38 @@ function lod_pccGps()
     pcc1=Array{Float64,1}()
     pcc=[]
     #PCCs
-    #=base_lg=2.941944
+    base_lg=2.941944
     base_lt=51.24306
     push!(pcc0,base_lg)
     push!(pcc0,base_lt)
-    push!(pcc,pcc0)=#
+    push!(pcc,pcc0)#==#
     push!(pcc1,3.183611)
     push!(pcc1,51.32694)
     push!(pcc,pcc1)
     return pcc
 end
 ################################################################################
-#set east-west buffer on domain
-function loD_ewbuff()
-    buffer=1
+#set west buffer on domain
+function loD_wbuff()
+    buffer=0
     return buffer
 end
 ################################################################################
-#set souther buffer on domain
+#set east buffer on domain
+function loD_ebuff()
+    buffer=0
+    return buffer
+end
+################################################################################
+#set south buffer on domain
 function loD_sbuff()
-    buffer=1
+    buffer=0
+    return buffer
+end
+################################################################################
+#set north buffer on domain
+function loD_nbuff()
+    buffer=0
     return buffer
 end
 ################################################################################
