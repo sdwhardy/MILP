@@ -55,11 +55,11 @@ function ppf_printOcn(ocean)
 	xb=Array{Float64,1}()
 	yb=Array{Float64,1}()
 	#println(ocean.reg.bnd)
-	for i in ocean.reg.bnd
+	for i in ocean.reg.bnd.fbnd.lims
 		push!(xb,i.x)
 		push!(yb,i.y)
 	end
-	
+
 	#=xc=Array{Float64,1}()
 	yc=Array{Float64,1}()
 	for i in ocean.reg.sth
@@ -76,8 +76,8 @@ function ppf_printOcn(ocean)
 	xlimin=trunc(Int,findmin(x)[1])-os
 	ylimin=trunc(Int,findmin(y)[1])-os
 	plotly()
-	plot(x,y,seriestype=:scatter,xticks = xlimin:5:xlimax,xlims=(xlimin,xlimax),yticks = ylimin:5:ylimax)
-	plot!(xb,yb,xticks = xlimin:5:xlimax,xlims=(xlimin,xlimax),yticks = ylimin:5:ylimax)
+	plot(x,y,seriestype=:scatter,xticks = ylimin:5:ylimax,xlims=(ylimin,ylimax),yticks = ylimin:5:ylimax)
+	plot!(xb,yb,xticks = ylimin:5:ylimax,xlims=(ylimin,ylimax),yticks = ylimin:5:ylimax)
 	#plot!(xc,yc,xticks = xlimin:5:xlimax,xlims=(xlimin,xlimax),yticks = ylimin:5:ylimax)
 
     #=i=1

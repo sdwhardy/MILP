@@ -5,6 +5,12 @@ mutable struct xy
 end
 xy()=xy(69.69,69.69)
 ###################################################################
+mutable struct line
+      m::Float64
+      b::Float64
+end
+line()=line(69.69,69.69)
+###################################################################
 mutable struct gps
       lat::Float64
       lng::Float64
@@ -34,16 +40,31 @@ mutable struct pcc
 end
 pcc()=pcc(gps(),coord())
 ###################################################################
+mutable struct lnbnd
+      lims::Array{xy}
+      lmodel::Array{line}
+end
+lnbnd()=lnbnd([],[])
+###################################################################
+mutable struct domain
+      ebnd::lnbnd
+      wbnd::lnbnd
+      sbnd::lnbnd
+      nbnd::lnbnd
+      fbnd::lnbnd
+end
+domain()=domain(lnbnd(),lnbnd(),lnbnd(),lnbnd(),lnbnd())
+###################################################################
 mutable struct region
       gps::gps
       coord::coord
       area::Float64
       ncons::Float64
       cnces::Array{cnce}
-      bnd::Array{xy}
+      bnd::domain
       sth::Array{xy}
 end
-region()=region(gps(),coord(),69.69,69.69,[],[],[])
+region()=region(gps(),coord(),69.69,69.69,[],domain(),[])
 ###################################################################
 mutable struct eez
       gps::gps

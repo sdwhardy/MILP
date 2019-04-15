@@ -68,25 +68,25 @@ end
 ################################################################################
 #set west buffer on domain
 function loD_wbuff()
-    buffer=0
+    buffer=5
     return buffer
 end
 ################################################################################
 #set east buffer on domain
 function loD_ebuff()
-    buffer=0
+    buffer=5
     return buffer
 end
 ################################################################################
 #set south buffer on domain
 function loD_sbuff()
-    buffer=0
+    buffer=5
     return buffer
 end
 ################################################################################
 #set north buffer on domain
 function loD_nbuff()
-    buffer=0
+    buffer=5
     return buffer
 end
 ################################################################################

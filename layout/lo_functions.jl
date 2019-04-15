@@ -172,6 +172,21 @@ function lof_addEBuff(bnd)
     return bnd
 end
 ################################################################################
+function lof_lnrBnd(xbnd)
+    for i=1:length(xbnd.lims)-1
+        push!(xbnd.lmodel,line())
+        if xbnd.lims[i].y == xbnd.lims[i+1].y
+            #xbnd.lims[i+1].x=xbnd.lims[i+1].x
+            alpha_beta=[xbnd.lims[i].y,0]
+        else
+            alpha_beta=reverse([[xbnd.lims[i].y,xbnd.lims[i+1].y] ones(2)]\[xbnd.lims[i].x,xbnd.lims[i+1].x])#fits linear model
+        end
+        xbnd.lmodel[i].b=alpha_beta[1]
+        xbnd.lmodel[i].m=alpha_beta[2]
+    end
+    return nothing
+end
+################################################################################
 #find the full boundary around the concessions
 function lof_ewbnd(ocn)
     all=Array{xy,1}()
@@ -182,27 +197,36 @@ function lof_ewbnd(ocn)
     fnsh=ocn.reg.cnces[length(ocn.reg.cnces)].coord.cnt#define furthest concession
     push!(Wbnd,deepcopy(strt))
     push!(Ebnd,deepcopy(strt))
-    println(strt)
-    for i in ocn.reg.cnces#[2:length( ocn.reg.cnces)]
+    for i in ocn.reg.cnces[2:length( ocn.reg.cnces)]
         push!(all,deepcopy(i.coord.cnt))
     end
 
     Wbnd,all=lof_wBnd(Wbnd,fnsh,all)#finds western boundary
     Ebnd=lof_eBnd(Ebnd,fnsh,deepcopy(all))#finds eastern boundary
-    println(Wbnd)
-    println(Ebnd)
     Wbnd=lof_addWBuff(Wbnd)#add buffer to western boundary
     Ebnd=lof_addEBuff(Ebnd)#add buffer to eastern boundary
-    println(Wbnd)
-    println(Ebnd)
+    ocn.reg.bnd.wbnd.lims=deepcopy(Wbnd)
+    ocn.reg.bnd.ebnd.lims=deepcopy(Ebnd)
+    #set calculated n-e-s-w boundary points
+    push!(ocn.reg.bnd.nbnd.lims,ocn.reg.bnd.wbnd.lims[length(ocn.reg.bnd.wbnd.lims)])
+    push!(ocn.reg.bnd.nbnd.lims,ocn.reg.bnd.ebnd.lims[length(ocn.reg.bnd.ebnd.lims)])
+    push!(ocn.reg.bnd.sbnd.lims,ocn.reg.bnd.wbnd.lims[1])
+    push!(ocn.reg.bnd.sbnd.lims,ocn.reg.bnd.ebnd.lims[1])
+    lof_lnrBnd(ocn.reg.bnd.ebnd)
+    lof_lnrBnd(ocn.reg.bnd.wbnd)
+
+    lof_lnrBnd(ocn.reg.bnd.sbnd)
+    lof_lnrBnd(ocn.reg.bnd.nbnd)
+    #ocn.reg.bnd.nbnd.lims=deepcopy(Ebnd)
     Ebnd=reverse(Ebnd,1)
     for i in Ebnd
         push!(Wbnd,i)
     end
-    return Wbnd
+    ocn.reg.bnd.fbnd.lims=deepcopy(Wbnd)
+    return nothing
 end
 ################################################################################
-function lof_sbnd(ocn)
+#=function lof_sbnd(ocn)
     cns=Array{Float64,1}()
     for i in ocn.reg.cnces
         push!(cns,i.coord.cnt.y)
@@ -219,7 +243,7 @@ function lof_sbnd(ocn)
     push!(cns,cls0)
     push!(cns,cls1)
     return cns
-end
+end=#
 ###############################################################################
 function lof_layoutOcn()
     ocean=eez()
@@ -229,11 +253,14 @@ function lof_layoutOcn()
     lof_dists(ocean,base)
     os=lof_rotateOcn(ocean)
     lof_slideOcn(ocean,os)
-    ocean.reg.bnd=lof_ewbnd(ocean)
+    lof_ewbnd(ocean)
+    println(ocean.reg.bnd.ebnd.lims)
+    println(ocean.reg.bnd.ebnd.lmodel)
+    #println(ocean.reg.bnd.lims)
     #ocean.reg.sth=lof_sbnd(ocean)
     #println(ocean.reg.sth)
     #lof_cnsPeri(ocean.reg.cnces)
-    ppf_printOcn(ocean)
+    #ppf_printOcn(ocean)
 end
 ################################################################################
 
