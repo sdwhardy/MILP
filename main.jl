@@ -74,8 +74,8 @@ function main()
 
     #o2o=false#PCC transformer/ compensation 50-50 offshore-onshore
     o2o=true#OSS transformer/ compensation all offshore
-    #cbl_cost(l,S,kv,wp,o2o)
-    xfmr_cost(S,wp,o2o)
+    cbl_cost(l,S,kv,wp,o2o)
+    #xfmr_cost(S,wp,o2o)
 
     #for S=500:1:1500
     xfmr_cbl_cost(l,S,kv,wp,o2o)

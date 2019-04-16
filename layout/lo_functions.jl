@@ -1,5 +1,11 @@
 #this file contains functions that calculate the layout of the area
 ################################################################################
+#returns the hypotenuse
+function pnt2pnt_dist(pnt1,pnt2)
+    hyp=sqrt((pnt2.x-pnt1.x)^2+(pnt2.y-pnt1.y)^2)
+    return hyp
+end
+################################################################################
 #Change degrees to radians
 function lof_d2r(deg)
     return deg*pi/180
@@ -28,16 +34,25 @@ function lof_shift(x,os)
 end
 ################################################################################
 #base layout of the zone consisting of all concessions
-function lof_layoutZone()
+function lof_layoutZone(num)
     km=1#scale
-    gpss=lod_cncesGps()
-    areas=lod_concessionAreas()
+    gpss=lod_cncesGps()#get gps coords of each concession
+    mvas=lod_cncesMva(length(gpss))#get power of each concession
+    wnds=lod_cncesWnd(length(gpss))#get wind profiles for each concession
+    trbs=lod_cncesTrbs(length(gpss))#get turbine info for each concession
+    #areas=lod_concessionAreas()
     zone=region()
+    #loop through all concessions
     for i=1:length(gpss)
         concession=cnce()
-        concession.gps.lng=gpss[i][1]
-        concession.gps.lat=gpss[i][2]
-        concession.area=areas[i]
+        concession.gps.lng=gpss[i][1]#set longitude
+        concession.gps.lat=gpss[i][2]#set latittude
+        concession.mva=mvas[i]#set concession power
+        concession.wnd=wnds[i]#set wind profiles
+        concession.trb=trbs[i]#set turbine type
+        concession.kv=lod_cncsKv()#set collector kv
+        concession.num=num+i
+        #concession.area=areas[i]
         push!(zone.cnces,deepcopy(concession))
     end
     return zone
@@ -46,8 +61,8 @@ end
 #sets the gps coords that are the reference coords
 function lof_bseCrd(ocean)
     base=gps()
-    base.lat=ocean.pccs[length(ocean.pccs)].gps.lat
-    base.lng=ocean.pccs[length(ocean.pccs)].gps.lng
+    base.lat=ocean.pccs[length(ocean.pccs)].gps.lat#base lat
+    base.lng=ocean.pccs[length(ocean.pccs)].gps.lng#base long
     #println(base)
     return base
 end
@@ -108,6 +123,8 @@ function lof_shoreConnect(location)
         shore=pcc()
         shore.gps.lng=gpss[i][1]
         shore.gps.lat=gpss[i][2]
+        shore.kv=lod_pccKv()
+        shore.num=i
         push!(location,deepcopy(shore))
     end
 end
@@ -244,16 +261,99 @@ function lof_ewbnd(ocn)
     return nothing
 end
 ###############################################################################
+function lof_farthest(pccs,rg)
+    fthst=xy()
+    l1=0
+    l2=0
+
+    for i in pccs
+        l2=l2+pnt2pnt_dist(i.coord.cnt,rg.bnd.nbnd.lims[2])
+        l1=l1+pnt2pnt_dist(i.coord.cnt,rg.bnd.nbnd.lims[1])
+    end
+    if l1>=l2
+        spc=rg.cnces[1].trb.dia*lod_ossSpc()
+        fthst=rg.bnd.nbnd.lims[1]
+    else
+        fthst=rg.bnd.nbnd.lims[2]
+        spc=-1*(rg.cnces[1].trb.dia)*lod_ossSpc()
+    end
+    return fthst, spc
+end
+###############################################################################
+#finds the western boundary at y=y
+function lof_wLim(y,bd)
+    wlx=0
+    for i=1:length(bd.lims)-1
+        if (bd.lims[i].y <= y && y <= bd.lims[i+1].y)
+            wlx=bd.lmodel[i].m*y+bd.lmodel[i].b
+        end
+    end
+    return wlx
+end
+###############################################################################
+#finds the eastern boundary at y=y
+function lof_eLim(y,bd)
+    elx=0
+    for i=1:length(bd.lims)-1
+        if (bd.lims[i+1].y <= y && y <= bd.lims[i].y)
+            elx=bd.lmodel[i].m*y+bd.lmodel[i].b
+        end
+    end
+    return elx
+end
+###############################################################################
+function lof_ossLine(y,elx,wlx,spc,num,osss)
+    if spc>0
+        x=wlx
+    elseif spc<0
+        x=elx
+    else
+        error("OSS spacing is 0!")
+    end
+    while (x <= elx && wlx <= x)
+        osub=oss()
+        osub.coord.cnt.x=deepcopy(x)
+        osub.coord.cnt.y=deepcopy(y)
+        osub.num=num
+        push!(osss,osub)
+        x=x+spc
+        num=num+1
+    end
+    return num
+end
+###############################################################################
+function lof_osss(ocn)
+    strtPnt,spc=lof_farthest(ocn.pccs,ocn.reg)#selects either nw or ne to start and sets the spcing
+    ns=strtPnt.y
+    num=length(ocn.pccs)+length(ocn.reg.cnces)+1
+    while ns>ocn.reg.bnd.sbnd.lims[1].y
+        elx=lof_eLim(ns,ocn.reg.bnd.ebnd)
+        wlx=lof_wLim(ns,ocn.reg.bnd.wbnd)
+        num=lof_ossLine(ns,elx,wlx,spc,num,ocn.reg.osss)#lay a line of oss
+        ns=ns-abs(spc)
+    end
+end
+###############################################################################
 function lof_layoutOcn()
-    ocean=eez()
-    ocean.reg=lof_layoutZone()
-    lof_shoreConnect(ocean.pccs)
-    base=lof_bseCrd(ocean)
-    lof_dists(ocean,base)
-    os=lof_rotateOcn(ocean)
-    lof_slideOcn(ocean,os)
-    lof_ewbnd(ocean)
-    ppf_printOcn(ocean)
+    ocean=eez()#build the eez in the ocean
+    lof_shoreConnect(ocean.pccs)#add the gps of points of common coupling
+    ocean.reg=lof_layoutZone(length(ocean.pccs))#add the region with concessions
+    base=lof_bseCrd(ocean)#find base coordinates
+    lof_dists(ocean,base)#set layout in terms of base
+    os=lof_rotateOcn(ocean)#apply rotation to align n-s with y
+    lof_slideOcn(ocean,os)#slide to align western most point with x=0
+    lof_ewbnd(ocean)#find the boundary of region containnig oss
+    lof_osss(ocean)#add all osss within boundary
+    for i in ocean.pccs
+        println(i.num)
+    end
+    for i in ocean.reg.cnces
+        println(i.num)
+    end
+    for i in ocean.reg.osss
+        println(i.num)
+    end
+    ppf_printOcn(ocean)#print ocean
 end
 ################################################################################
 

@@ -1,7 +1,55 @@
 ################################################################################
-function lod_concessionAreas()
+#=function lod_concessionAreas()
     areas=[38.0,19.0,23.0,14.0,18.0,35.0,12.0,16.0]
     return areas
+end=#
+################################################################################
+#sets multiple of turbine diameter for oss spacing
+function lod_ossSpc()
+    return 50
+end
+################################################################################
+#set collector voltage
+function lod_cncsKv()
+    return 33.0
+end
+################################################################################
+#set onshore transmission voltage
+function lod_pccKv()
+    return 220.0
+end
+################################################################################
+#sets the power level of each concession
+function lod_cncesMva(nc)
+    mva=Array{Float64,1}()
+    for i=1:nc
+        push!(mva,500.0)
+    end
+    return mva
+end
+################################################################################
+#sets wind of each concession
+function lod_cncesWnd(nc)
+    wnd=Array{wind,1}()
+    mn=13
+    a=11.08
+    k=2.32
+    for i=1:nc
+        wp=wndF_wndPrf(mn,a,k)
+        push!(wnd,wp)
+    end
+    return wnd
+end
+################################################################################
+#sets wind of each concession
+function lod_cncesTrbs(nc)
+    trbs=Array{turb,1}()
+    for i=1:nc
+        trb=turb()
+        wndD_TrqCrv(trb)
+        push!(trbs,trb)
+    end
+    return trbs
 end
 ################################################################################
 function lod_cncesGps()

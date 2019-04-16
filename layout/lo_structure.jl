@@ -18,27 +18,54 @@ end
 gps()=gps(69.69,69.69)
 ###################################################################
 mutable struct coord
-      nw::xy
-      ne::xy
-      sw::xy
-      se::xy
+      #nw::xy
+      #ne::xy
+      #sw::xy
+      #se::xy
       cnt::xy
 end
-coord()=coord(xy(),xy(),xy(),xy(),xy())
+#coord()=coord(xy(),xy(),xy(),xy(),xy())
+coord()=coord(xy())
+###################################################################
+mutable struct turb
+      wsp::Array{Float64}
+      pwr::Array{Float64}
+      dia::Float64
+      mva::Float64
+      cin::Float64
+      cout::Float64
+end
+turb()=turb([],[],69.69,69.69,69.69,69.69)
 ###################################################################
 mutable struct cnce
       gps::gps
-      name::String
-      area::Float64
+      #name::String
+      #area::Float64
       coord::coord
+      mva::Float64
+      wnd::wind
+      trb::turb
+      kv::Float64
+      num::Int64
 end
-cnce()=cnce(gps(),"colruyt",69.69,coord())
+#cnce()=cnce(gps(),"colruyt",69.69,coord())
+cnce()=cnce(gps(),coord(),69.69,wind(),turb(),69.69,69)
+###################################################################
+mutable struct oss
+      coord::coord
+      mvas::Array{Float64}
+      wnds::Array{wind}
+      num::Int64
+end
+oss()=oss(coord(),[],[],69)
 ###################################################################
 mutable struct pcc
       gps::gps
       coord::coord
+      kv::Float64
+      num::Int64
 end
-pcc()=pcc(gps(),coord())
+pcc()=pcc(gps(),coord(),69.69,69)
 ###################################################################
 mutable struct lnbnd
       lims::Array{xy}
@@ -51,37 +78,29 @@ mutable struct domain
       wbnd::lnbnd
       sbnd::lnbnd
       nbnd::lnbnd
-      fbnd::lnbnd
 end
-domain()=domain(lnbnd(),lnbnd(),lnbnd(),lnbnd(),lnbnd())
+domain()=domain(lnbnd(),lnbnd(),lnbnd(),lnbnd())
 ###################################################################
 mutable struct region
-      gps::gps
-      coord::coord
-      area::Float64
-      ncons::Float64
+      #gps::gps
+      #coord::coord
+      #area::Float64
+      #ncons::Float64
+      osss::Array{oss}
       cnces::Array{cnce}
       bnd::domain
-      sth::Array{xy}
+      #sth::Array{xy}
 end
-region()=region(gps(),coord(),69.69,69.69,[],domain(),[])
+#region()=region(gps(),coord(),69.69,69.69,[],domain(),[])
+region()=region([],[],domain())
 ###################################################################
 mutable struct eez
-      gps::gps
+      #gps::gps
       reg::region
-      area::Float64
+      #area::Float64
       pccs::Array{pcc}
-      coord::coord
+      #coord::coord
 end
-eez()=eez(gps(),region(),69.69,[],coord())
-###################################################################
-mutable struct turb
-      wsp::Array{Float64}
-      pwr::Array{Float64}
-      dia::Float64
-      mva::Float64
-      cin::Float64
-      cout::Float64
-end
-turb()=turb([],[],69.69,69.69,69.69,69.69)
+#eez()=eez(gps(),region(),69.69,[],coord())
+eez()=eez(region(),[])
 ###################################################################
