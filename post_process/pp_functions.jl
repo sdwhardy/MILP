@@ -72,16 +72,6 @@ function ppf_printOcn(ocean)
 		push!(xb,i.x)
 		push!(yb,i.y)
 	end
-	#=xc=Array{Float64,1}()
-	yc=Array{Float64,1}()
-	for i in ocean.reg.sth
-		push!(xc,i.x)
-		push!(yc,i.y)
-	end=#
-    #x=[ocean.pccs[1].coord.cnt.x,ocean.pccs[2].coord.cnt.x,ocean.reg.cnces[1].coord.cnt.x,ocean.reg.cnces[2].coord.cnt.x]#,ocean.reg.cnces[3].coord.cnt.x,ocean.reg.cnces[4].coord.cnt.x,ocean.reg.cnces[5].coord.cnt.x,ocean.reg.cnces[6].coord.cnt.x,ocean.reg.cnces[7].coord.cnt.x,ocean.reg.cnces[8].coord.cnt.x]
-    #y=[ocean.pccs[1].coord.cnt.y,ocean.pccs[2].coord.cnt.y,ocean.reg.cnces[1].coord.cnt.y,ocean.reg.cnces[2].coord.cnt.y]#,ocean.reg.cnces[3].coord.cnt.y,ocean.reg.cnces[4].coord.cnt.y,ocean.reg.cnces[5].coord.cnt.y,ocean.reg.cnces[6].coord.cnt.y,ocean.reg.cnces[7].coord.cnt.y,ocean.reg.cnces[8].coord.cnt.y]
-	#println(findmax(y)[1])
-	#println(findmax(y)[2])
 	os=1
 	xlimax=trunc(Int,findmax(x)[1])+os
 	ylimax=trunc(Int,findmax(y)[1])+os
@@ -90,40 +80,5 @@ function ppf_printOcn(ocean)
 	plotly()
 	plot(x,y,seriestype=:scatter,xticks = ylimin:5:ylimax,xlims=(ylimin,ylimax),yticks = ylimin:5:ylimax)
 	plot!(xb,yb,xticks = ylimin:5:ylimax,xlims=(ylimin,ylimax),yticks = ylimin:5:ylimax)
-	#plot!(xc,yc,xticks = xlimin:5:xlimax,xlims=(xlimin,xlimax),yticks = ylimin:5:ylimax)
-
-    #=i=1
-    x1=[ocean.reg.cnces[i].coord.nw.x,ocean.reg.cnces[i].coord.ne.x,ocean.reg.cnces[i].coord.se.x,ocean.reg.cnces[i].coord.sw.x,ocean.reg.cnces[i].coord.nw.x]
-    y1=[ocean.reg.cnces[i].coord.nw.y,ocean.reg.cnces[i].coord.ne.y,ocean.reg.cnces[i].coord.se.y,ocean.reg.cnces[i].coord.sw.y,ocean.reg.cnces[i].coord.nw.y]
-    i=2
-    x2=[ocean.reg.cnces[i].coord.nw.x,ocean.reg.cnces[i].coord.ne.x,ocean.reg.cnces[i].coord.se.x,ocean.reg.cnces[i].coord.sw.x,ocean.reg.cnces[i].coord.nw.x]
-    y2=[ocean.reg.cnces[i].coord.nw.y,ocean.reg.cnces[i].coord.ne.y,ocean.reg.cnces[i].coord.se.y,ocean.reg.cnces[i].coord.sw.y,ocean.reg.cnces[i].coord.nw.y]
-	i=3
-    x3=[ocean.reg.cnces[i].coord.nw.x,ocean.reg.cnces[i].coord.ne.x,ocean.reg.cnces[i].coord.se.x,ocean.reg.cnces[i].coord.sw.x,ocean.reg.cnces[i].coord.nw.x]
-    y3=[ocean.reg.cnces[i].coord.nw.y,ocean.reg.cnces[i].coord.ne.y,ocean.reg.cnces[i].coord.se.y,ocean.reg.cnces[i].coord.sw.y,ocean.reg.cnces[i].coord.nw.y]
-    i=4
-    x4=[ocean.reg.cnces[i].coord.nw.x,ocean.reg.cnces[i].coord.ne.x,ocean.reg.cnces[i].coord.se.x,ocean.reg.cnces[i].coord.sw.x,ocean.reg.cnces[i].coord.nw.x]
-    y4=[ocean.reg.cnces[i].coord.nw.y,ocean.reg.cnces[i].coord.ne.y,ocean.reg.cnces[i].coord.se.y,ocean.reg.cnces[i].coord.sw.y,ocean.reg.cnces[i].coord.nw.y]
-    i=5
-    x5=[ocean.reg.cnces[i].coord.nw.x,ocean.reg.cnces[i].coord.ne.x,ocean.reg.cnces[i].coord.se.x,ocean.reg.cnces[i].coord.sw.x,ocean.reg.cnces[i].coord.nw.x]
-    y5=[ocean.reg.cnces[i].coord.nw.y,ocean.reg.cnces[i].coord.ne.y,ocean.reg.cnces[i].coord.se.y,ocean.reg.cnces[i].coord.sw.y,ocean.reg.cnces[i].coord.nw.y]
-    i=6
-    x6=[ocean.reg.cnces[i].coord.nw.x,ocean.reg.cnces[i].coord.ne.x,ocean.reg.cnces[i].coord.se.x,ocean.reg.cnces[i].coord.sw.x,ocean.reg.cnces[i].coord.nw.x]
-    y6=[ocean.reg.cnces[i].coord.nw.y,ocean.reg.cnces[i].coord.ne.y,ocean.reg.cnces[i].coord.se.y,ocean.reg.cnces[i].coord.sw.y,ocean.reg.cnces[i].coord.nw.y]
-    i=7
-    x7=[ocean.reg.cnces[i].coord.nw.x,ocean.reg.cnces[i].coord.ne.x,ocean.reg.cnces[i].coord.se.x,ocean.reg.cnces[i].coord.sw.x,ocean.reg.cnces[i].coord.nw.x]
-    y7=[ocean.reg.cnces[i].coord.nw.y,ocean.reg.cnces[i].coord.ne.y,ocean.reg.cnces[i].coord.se.y,ocean.reg.cnces[i].coord.sw.y,ocean.reg.cnces[i].coord.nw.y]
-    i=8
-    x8=[ocean.reg.cnces[i].coord.nw.x,ocean.reg.cnces[i].coord.ne.x,ocean.reg.cnces[i].coord.se.x,ocean.reg.cnces[i].coord.sw.x,ocean.reg.cnces[i].coord.nw.x]
-    y8=[ocean.reg.cnces[i].coord.nw.y,ocean.reg.cnces[i].coord.ne.y,ocean.reg.cnces[i].coord.se.y,ocean.reg.cnces[i].coord.sw.y,ocean.reg.cnces[i].coord.nw.y]=#
-    #plot!(x1,y1,xticks = 0:5:xlim,xlims=(0,xlim),yticks = 0:5:ylim,ylims=(0,ylim))
-    #plot!(x2,y2,xticks = 0:5:xlim,xlims=(0,xlim),yticks = 0:5:ylim,ylims=(0,ylim))
-
-    #=plot!(x3,y3,xticks = 0:5:20,xlims=(0,20),yticks = 0:5:55)
-    plot!(x4,y4,xticks = 0:5:20,xlims=(0,20),yticks = 0:5:55)
-    plot!(x5,y5,xticks = 0:5:20,xlims=(0,20),yticks = 0:5:55)
-    plot!(x6,y6,xticks = 0:5:20,xlims=(0,20),yticks = 0:5:55)
-    plot!(x7,y7,xticks = 0:5:20,xlims=(0,20),yticks = 0:5:55)
-    plot!(x8,y8,xticks = 0:5:20,xlims=(0,20),yticks = 0:5:55)=#
 end
 ################################################################################

@@ -1,26 +1,33 @@
+#this file contains functions that calculate the layout of the area
 ################################################################################
+#Change degrees to radians
 function lof_d2r(deg)
     return deg*pi/180
 end
 ################################################################################
+#calculates length of 1 deg og longitude at given lattitude
 function lof_lg1deg(lat)
     return cos(lof_d2r(lat))*111
 end
 ################################################################################
+#changes degrees to a length
 function lof_deg2lgth(d,dPl)
     return d*dPl
 end
 ################################################################################
+#rotates axis to align n-s with y
 function lof_rotation(x,y,theta)
     co_od=[x y]
     rotated=co_od*[cos(theta) -1*sin(theta);sin(theta) cos(theta)]
     return rotated
 end
 ################################################################################
+#shifts western most to be at x=0
 function lof_shift(x,os)
     return x+os
 end
 ################################################################################
+#base layout of the zone consisting of all concessions
 function lof_layoutZone()
     km=1#scale
     gpss=lod_cncesGps()
@@ -36,6 +43,7 @@ function lof_layoutZone()
     return zone
 end
 ################################################################################
+#sets the gps coords that are the reference coords
 function lof_bseCrd(ocean)
     base=gps()
     base.lat=ocean.pccs[length(ocean.pccs)].gps.lat
@@ -44,6 +52,7 @@ function lof_bseCrd(ocean)
     return base
 end
 ################################################################################
+#loops through all coords to get relative lengthd
 function lof_dist(location,base,lnthLT,km)
     for i=1:length(location)
         location[i].coord.cnt.x=lof_deg2lgth(location[i].gps.lng-base.lng,lof_lg1deg(location[i].gps.lat+base.lng)*km)
@@ -51,6 +60,8 @@ function lof_dist(location,base,lnthLT,km)
     end
 end
 ################################################################################
+#calculates lengths based on latitude
+#as lattitude changes number of km should be updated
 function lof_dists(ocean,base)
     km=1
     lnth_1deg_LT=111*km
@@ -58,6 +69,7 @@ function lof_dists(ocean,base)
     lof_dist(ocean.pccs,base,lnth_1deg_LT,km)
 end
 ################################################################################
+#loops through to apply appropriate rotations for coords
 function lof_rot(location,theta,os)
     for i=1:length(location)
         xy=lof_rotation(location[i].coord.cnt.x,location[i].coord.cnt.y,theta)
@@ -70,6 +82,7 @@ function lof_rot(location,theta,os)
     return os
 end
 ################################################################################
+#rotates the entire region
 function lof_rotateOcn(ocean)
     theta=atan((ocean.pccs[length(ocean.pccs)].coord.cnt.x-ocean.reg.cnces[length(ocean.reg.cnces)].coord.cnt.x)/(ocean.reg.cnces[length(ocean.reg.cnces)].coord.cnt.y-ocean.pccs[length(ocean.pccs)].coord.cnt.y))
     os=0.0
@@ -78,6 +91,7 @@ function lof_rotateOcn(ocean)
     return os
 end
 ################################################################################
+#translates the entire region
 function lof_slideOcn(ocean,os)
     for i=1:length(ocean.reg.cnces)
         ocean.reg.cnces[i].coord.cnt.x=lof_shift(ocean.reg.cnces[i].coord.cnt.x,abs(os))
@@ -87,6 +101,7 @@ function lof_slideOcn(ocean,os)
     end
 end
 ################################################################################
+#Places the pccs
 function lof_shoreConnect(location)
     gpss=lod_pccGps()
     for i=1:length(gpss)
@@ -148,6 +163,7 @@ function lof_eBnd(bd,f,pnts)
     return bd
 end
 ###############################################################################
+#adds specified buffer to the west
 function lof_addWBuff(bnd)
     wbuff=loD_wbuff()
     sbuff=loD_sbuff()
@@ -160,6 +176,7 @@ function lof_addWBuff(bnd)
     return bnd
 end
 ################################################################################
+#adds specified buffer to the east
 function lof_addEBuff(bnd)
     ebuff=loD_ebuff()
     sbuff=loD_sbuff()
@@ -172,6 +189,7 @@ function lof_addEBuff(bnd)
     return bnd
 end
 ################################################################################
+#makes the linear model given boundary points
 function lof_lnrBnd(xbnd)
     for i=1:length(xbnd.lims)-1
         push!(xbnd.lmodel,line())
@@ -187,12 +205,14 @@ function lof_lnrBnd(xbnd)
     return nothing
 end
 ################################################################################
-#find the full boundary around the concessions
+#finds the full boundary points around the concession and makes linear boundary model
 function lof_ewbnd(ocn)
+    #dummy arrays
     all=Array{xy,1}()
     all_oss=Array{xy,1}()
     Wbnd=Array{xy,1}()
     Ebnd=Array{xy,1}()
+
     strt=ocn.reg.cnces[1].coord.cnt#define 0 point
     fnsh=ocn.reg.cnces[length(ocn.reg.cnces)].coord.cnt#define furthest concession
     push!(Wbnd,deepcopy(strt))
@@ -201,29 +221,26 @@ function lof_ewbnd(ocn)
         push!(all,deepcopy(i.coord.cnt))
     end
 
+    #sets east and west boundary
     Wbnd,all=lof_wBnd(Wbnd,fnsh,all)#finds western boundary
     Ebnd=lof_eBnd(Ebnd,fnsh,deepcopy(all))#finds eastern boundary
     Wbnd=lof_addWBuff(Wbnd)#add buffer to western boundary
     Ebnd=lof_addEBuff(Ebnd)#add buffer to eastern boundary
-    ocn.reg.bnd.wbnd.lims=deepcopy(Wbnd)
-    ocn.reg.bnd.ebnd.lims=deepcopy(Ebnd)
-    ocn.reg.bnd.ebnd.lims=reverse(ocn.reg.bnd.ebnd.lims,1)
-    #set calculated n-e-s-w boundary points
+    ocn.reg.bnd.wbnd.lims=Wbnd
+    ocn.reg.bnd.ebnd.lims=reverse(Ebnd,1)
+
+    #set calculated n-s boundary points
     push!(ocn.reg.bnd.nbnd.lims,ocn.reg.bnd.wbnd.lims[length(ocn.reg.bnd.wbnd.lims)])
     push!(ocn.reg.bnd.nbnd.lims,ocn.reg.bnd.ebnd.lims[1])
     push!(ocn.reg.bnd.sbnd.lims,ocn.reg.bnd.ebnd.lims[length(ocn.reg.bnd.ebnd.lims)])
     push!(ocn.reg.bnd.sbnd.lims,ocn.reg.bnd.wbnd.lims[1])
+
+    #calculates linear model for boundary
     lof_lnrBnd(ocn.reg.bnd.ebnd)
     lof_lnrBnd(ocn.reg.bnd.wbnd)
-
     lof_lnrBnd(ocn.reg.bnd.sbnd)
     lof_lnrBnd(ocn.reg.bnd.nbnd)
-    #ocn.reg.bnd.nbnd.lims=deepcopy(Ebnd)
-    Ebnd=reverse(Ebnd,1)
-    for i in Ebnd
-        push!(Wbnd,i)
-    end
-    ocn.reg.bnd.fbnd.lims=deepcopy(Wbnd)
+
     return nothing
 end
 ###############################################################################
@@ -236,18 +253,6 @@ function lof_layoutOcn()
     os=lof_rotateOcn(ocean)
     lof_slideOcn(ocean,os)
     lof_ewbnd(ocean)
-    println(ocean.reg.bnd.wbnd.lims)
-    println(ocean.reg.bnd.wbnd.lmodel)
-    println(ocean.reg.bnd.nbnd.lims)
-    println(ocean.reg.bnd.nbnd.lmodel)
-    println(ocean.reg.bnd.ebnd.lims)
-    println(ocean.reg.bnd.ebnd.lmodel)
-    println(ocean.reg.bnd.sbnd.lims)
-    println(ocean.reg.bnd.sbnd.lmodel)
-    #println(ocean.reg.bnd.lims)
-    #ocean.reg.sth=lof_sbnd(ocean)
-    #println(ocean.reg.sth)
-    #lof_cnsPeri(ocean.reg.cnces)
     ppf_printOcn(ocean)
 end
 ################################################################################
