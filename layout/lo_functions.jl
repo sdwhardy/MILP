@@ -207,11 +207,12 @@ function lof_ewbnd(ocn)
     Ebnd=lof_addEBuff(Ebnd)#add buffer to eastern boundary
     ocn.reg.bnd.wbnd.lims=deepcopy(Wbnd)
     ocn.reg.bnd.ebnd.lims=deepcopy(Ebnd)
+    ocn.reg.bnd.ebnd.lims=reverse(ocn.reg.bnd.ebnd.lims,1)
     #set calculated n-e-s-w boundary points
     push!(ocn.reg.bnd.nbnd.lims,ocn.reg.bnd.wbnd.lims[length(ocn.reg.bnd.wbnd.lims)])
-    push!(ocn.reg.bnd.nbnd.lims,ocn.reg.bnd.ebnd.lims[length(ocn.reg.bnd.ebnd.lims)])
+    push!(ocn.reg.bnd.nbnd.lims,ocn.reg.bnd.ebnd.lims[1])
+    push!(ocn.reg.bnd.sbnd.lims,ocn.reg.bnd.ebnd.lims[length(ocn.reg.bnd.ebnd.lims)])
     push!(ocn.reg.bnd.sbnd.lims,ocn.reg.bnd.wbnd.lims[1])
-    push!(ocn.reg.bnd.sbnd.lims,ocn.reg.bnd.ebnd.lims[1])
     lof_lnrBnd(ocn.reg.bnd.ebnd)
     lof_lnrBnd(ocn.reg.bnd.wbnd)
 
@@ -225,25 +226,6 @@ function lof_ewbnd(ocn)
     ocn.reg.bnd.fbnd.lims=deepcopy(Wbnd)
     return nothing
 end
-################################################################################
-#=function lof_sbnd(ocn)
-    cns=Array{Float64,1}()
-    for i in ocn.reg.cnces
-        push!(cns,i.coord.cnt.y)
-    end
-    tmp=findmin(cns)[2]
-    tmp1=findmax(cns)[2]
-    cns[tmp]=cns[tmp1]+10
-    cls0=deepcopy(ocn.reg.cnces[tmp].coord.cnt)
-    cls0.y=cls0.y-buffer
-    tmp=findmin(cns)[2]
-    cls1=deepcopy(ocn.reg.cnces[tmp].coord.cnt)
-    cls1.y=cls1.y-buffer
-    cns=[]
-    push!(cns,cls0)
-    push!(cns,cls1)
-    return cns
-end=#
 ###############################################################################
 function lof_layoutOcn()
     ocean=eez()
@@ -254,13 +236,19 @@ function lof_layoutOcn()
     os=lof_rotateOcn(ocean)
     lof_slideOcn(ocean,os)
     lof_ewbnd(ocean)
+    println(ocean.reg.bnd.wbnd.lims)
+    println(ocean.reg.bnd.wbnd.lmodel)
+    println(ocean.reg.bnd.nbnd.lims)
+    println(ocean.reg.bnd.nbnd.lmodel)
     println(ocean.reg.bnd.ebnd.lims)
     println(ocean.reg.bnd.ebnd.lmodel)
+    println(ocean.reg.bnd.sbnd.lims)
+    println(ocean.reg.bnd.sbnd.lmodel)
     #println(ocean.reg.bnd.lims)
     #ocean.reg.sth=lof_sbnd(ocean)
     #println(ocean.reg.sth)
     #lof_cnsPeri(ocean.reg.cnces)
-    #ppf_printOcn(ocean)
+    ppf_printOcn(ocean)
 end
 ################################################################################
 
@@ -358,4 +346,23 @@ end=#
         push!(Wbnd,i)
     end
     return Wbnd
+end=#
+###############################################################################
+#=function lof_sbnd(ocn)
+    cns=Array{Float64,1}()
+    for i in ocn.reg.cnces
+        push!(cns,i.coord.cnt.y)
+    end
+    tmp=findmin(cns)[2]
+    tmp1=findmax(cns)[2]
+    cns[tmp]=cns[tmp1]+10
+    cls0=deepcopy(ocn.reg.cnces[tmp].coord.cnt)
+    cls0.y=cls0.y-buffer
+    tmp=findmin(cns)[2]
+    cls1=deepcopy(ocn.reg.cnces[tmp].coord.cnt)
+    cls1.y=cls1.y-buffer
+    cns=[]
+    push!(cns,cls0)
+    push!(cns,cls1)
+    return cns
 end=#

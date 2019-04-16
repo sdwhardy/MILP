@@ -55,11 +55,23 @@ function ppf_printOcn(ocean)
 	xb=Array{Float64,1}()
 	yb=Array{Float64,1}()
 	#println(ocean.reg.bnd)
-	for i in ocean.reg.bnd.fbnd.lims
+	for i in ocean.reg.bnd.wbnd.lims
 		push!(xb,i.x)
 		push!(yb,i.y)
 	end
-
+	#println(ocean.reg.bnd)
+	for i in ocean.reg.bnd.nbnd.lims
+		push!(xb,i.x)
+		push!(yb,i.y)
+	end
+	for i in ocean.reg.bnd.ebnd.lims
+		push!(xb,i.x)
+		push!(yb,i.y)
+	end
+	for i in ocean.reg.bnd.sbnd.lims
+		push!(xb,i.x)
+		push!(yb,i.y)
+	end
 	#=xc=Array{Float64,1}()
 	yc=Array{Float64,1}()
 	for i in ocean.reg.sth
