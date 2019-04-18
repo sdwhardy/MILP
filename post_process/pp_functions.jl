@@ -77,7 +77,9 @@ function ppf_printOcn(ocean)
 	for i in ocean.reg.osss
 		push!(xc,i.coord.cnt.x)
 		push!(yc,i.coord.cnt.y)
+
 	end
+
 	os=1
 	xlimax=trunc(Int,findmax(x)[1])+os
 	ylimax=trunc(Int,findmax(y)[1])+os
@@ -85,9 +87,40 @@ function ppf_printOcn(ocean)
 	ylimin=trunc(Int,findmin(y)[1])-os
 	plotly()
 
-	plot(xc,yc,seriestype=:scatter,xticks = ylimin:5:ylimax,xlims=(ylimin,ylimax),yticks = ylimin:5:ylimax)
-	plot!(x,y,seriestype=:scatter,xticks = ylimin:5:ylimax,xlims=(ylimin,ylimax),yticks = ylimin:5:ylimax)
-	plot!(xb,yb,xticks = ylimin:5:ylimax,xlims=(ylimin,ylimax),yticks = ylimin:5:ylimax)
+	#plot(p,xc,yc,seriestype=:scatter,xticks = ylimin:5:ylimax,xlims=(ylimin,ylimax),yticks = ylimin:5:ylimax)
+	p=plot(xc,yc,seriestype=:scatter,xticks = ylimin:5:ylimax,xlims=(ylimin,ylimax),yticks = ylimin:5:ylimax)
+	plot!(p,x,y,seriestype=:scatter,xticks = ylimin:5:ylimax,xlims=(ylimin,ylimax),yticks = ylimin:5:ylimax)
+	plot!(p,xb,yb,xticks = ylimin:5:ylimax,xlims=(ylimin,ylimax),yticks = ylimin:5:ylimax)
 
+	#=xd=Array{Float64,1}()
+	yd=Array{Float64,1}()
+	for i in ocean.reg.gOarcs
+		push!(xd,i.tail.coord.cnt.x)
+		push!(xd,i.head.coord.cnt.x)
+		push!(yd,i.tail.coord.cnt.y)
+		push!(yd,i.head.coord.cnt.y)
+		plot!(p,xd,yd,xticks = ylimin:5:ylimax,xlims=(ylimin,ylimax),yticks = ylimin:5:ylimax,label="")
+		xd=[]
+		yd=[]
+	end
+	for i in ocean.reg.oParcs
+		push!(xd,i.tail.coord.cnt.x)
+		push!(xd,i.head.coord.cnt.x)
+		push!(yd,i.tail.coord.cnt.y)
+		push!(yd,i.head.coord.cnt.y)
+		plot!(p,xd,yd,xticks = ylimin:5:ylimax,xlims=(ylimin,ylimax),yticks = ylimin:5:ylimax,label="")
+		xd=[]
+		yd=[]
+	end
+	for i in ocean.reg.oOarcs
+		push!(xd,i.tail.coord.cnt.x)
+		push!(xd,i.head.coord.cnt.x)
+		push!(yd,i.tail.coord.cnt.y)
+		push!(yd,i.head.coord.cnt.y)
+		plot!(p,xd,yd,xticks = ylimin:5:ylimax,xlims=(ylimin,ylimax),yticks = ylimin:5:ylimax,label="")
+		xd=[]
+		yd=[]
+	end=#
+	p
 	end
 ################################################################################

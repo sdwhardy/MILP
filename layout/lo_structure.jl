@@ -66,6 +66,50 @@ mutable struct pcc
       num::Int64
 end
 pcc()=pcc(gps(),coord(),69.69,69)
+##############################################################################################################################
+##################################################### arcs ###################################################################
+##############################################################################################################################
+mutable struct oOarc
+      head::oss
+      tail::oss
+      #mva::Float64
+      #kv::Float64
+      cost::Float64
+      xr::Float64
+      xl::Float64
+      yb::Float64
+      lngth::Float64
+      #wnd::wind
+end
+oOarc()=oOarc(oss(),oss(),69.69,69.69,69.69,69.69,69.69)
+##############################################################################################################################
+mutable struct oParc
+      head::pcc
+      tail::oss
+      #mva::Float64
+      #kv::Float64
+      cost::Float64
+      xr::Float64
+      xl::Float64
+      yb::Float64
+      lngth::Float64
+      #wnd::wind
+end
+oParc()=oParc(pcc(),oss(),69.69,69.69,69.69,69.69,69.69)
+###################################################################
+mutable struct gOarc
+      head::oss
+      tail::cnce
+      #mva::Float64
+      #kv::Float64
+      cost::Float64
+      xr::Float64
+      xl::Float64
+      yb::Float64
+      lngth::Float64
+      #wnd::wind
+end
+gOarc()=gOarc(oss(),cnce(),69.69,69.69,69.69,69.69,69.69)
 ###################################################################
 mutable struct lnbnd
       lims::Array{xy}
@@ -88,11 +132,17 @@ mutable struct region
       #ncons::Float64
       osss::Array{oss}
       cnces::Array{cnce}
+      gOarcs::Array{gOarc}
+      oOarcs::Array{oOarc}
+      oParcs::Array{oParc}
+      #gParcs::Array{gParc}
+      #oOarcs::Array{oOarc}
+      #oParcs::Array{oParc}
       bnd::domain
       #sth::Array{xy}
 end
 #region()=region(gps(),coord(),69.69,69.69,[],domain(),[])
-region()=region([],[],domain())
+region()=region([],[],[],[],[],domain())
 ###################################################################
 mutable struct eez
       #gps::gps

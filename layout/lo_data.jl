@@ -3,10 +3,13 @@
     areas=[38.0,19.0,23.0,14.0,18.0,35.0,12.0,16.0]
     return areas
 end=#
+function lod_genSpc()
+    return 2.5
+end
 ################################################################################
 #sets multiple of turbine diameter for oss spacing
 function lod_ossSpc()
-    return 50
+    return 100
 end
 ################################################################################
 #set collector voltage
@@ -116,25 +119,25 @@ end
 ################################################################################
 #set west buffer on domain
 function loD_wbuff()
-    buffer=5
+    buffer=0
     return buffer
 end
 ################################################################################
 #set east buffer on domain
 function loD_ebuff()
-    buffer=5
+    buffer=0
     return buffer
 end
 ################################################################################
 #set south buffer on domain
 function loD_sbuff()
-    buffer=5
+    buffer=2.5
     return buffer
 end
 ################################################################################
 #set north buffer on domain
 function loD_nbuff()
-    buffer=5
+    buffer=0
     return buffer
 end
 ################################################################################
