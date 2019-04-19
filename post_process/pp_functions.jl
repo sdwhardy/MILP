@@ -45,14 +45,14 @@ function ppf_printOcn(ocean)
 	x=Array{Float64,1}()
 	y=Array{Float64,1}()
 	for i in ocean.pccs
-		push!(x,i.coord.cnt.x)
-		push!(y,i.coord.cnt.y)
-		println(i.num)
+		push!(x,i.coord.x)
+		push!(y,i.coord.y)
+		#println(i.num)
 	end
 	for i in ocean.reg.cnces
-		push!(x,i.coord.cnt.x)
-		push!(y,i.coord.cnt.y)
-		println(i.num)
+		push!(x,i.coord.x)
+		push!(y,i.coord.y)
+		#println(i.num)
 	end
 	xb=Array{Float64,1}()
 	yb=Array{Float64,1}()
@@ -77,11 +77,11 @@ function ppf_printOcn(ocean)
 	xoss=Array{Float64,1}()
 	yoss=Array{Float64,1}()
 	for i in ocean.reg.osss
-		push!(xoss,i.coord.cnt.x)
-		push!(yoss,i.coord.cnt.y)
-		println(i.coord.cnt)
+		push!(xoss,i.coord.x)
+		push!(yoss,i.coord.y)
+		#println(i.coord)
 	end
-	#println(lof_pnt2pnt_dist(ocean.reg.osss[2].coord.cnt,ocean.reg.osss[3].coord.cnt))
+	#println(lof_pnt2pnt_dist(ocean.reg.osss[2].coord,ocean.reg.osss[3].coord))
 	os=1
 	xlimax=trunc(Int,findmax(x)[1])+os
 	ylimax=trunc(Int,findmax(y)[1])+os
@@ -96,28 +96,28 @@ function ppf_printOcn(ocean)
 	xd=Array{Float64,1}()
 	yd=Array{Float64,1}()
 	#=for i in ocean.reg.gOarcs
-		push!(xd,i.tail.coord.cnt.x)
-		push!(xd,i.head.coord.cnt.x)
-		push!(yd,i.tail.coord.cnt.y)
-		push!(yd,i.head.coord.cnt.y)
+		push!(xd,i.tail.coord.x)
+		push!(xd,i.head.coord.x)
+		push!(yd,i.tail.coord.y)
+		push!(yd,i.head.coord.y)
 		plot!(p,xd,yd,xticks = ylimin:5:ylimax,xlims=(ylimin,ylimax),yticks = ylimin:5:ylimax,label="")
 		xd=[]
 		yd=[]
 	end
 	for i in ocean.reg.oParcs
-		push!(xd,i.tail.coord.cnt.x)
-		push!(xd,i.head.coord.cnt.x)
-		push!(yd,i.tail.coord.cnt.y)
-		push!(yd,i.head.coord.cnt.y)
+		push!(xd,i.tail.coord.x)
+		push!(xd,i.head.coord.x)
+		push!(yd,i.tail.coord.y)
+		push!(yd,i.head.coord.y)
 		plot!(p,xd,yd,xticks = ylimin:5:ylimax,xlims=(ylimin,ylimax),yticks = ylimin:5:ylimax,label="")
 		xd=[]
 		yd=[]
 	end=#
 	for i in ocean.reg.oOarcs
-		push!(xd,i.tail.coord.cnt.x)
-		push!(xd,i.head.coord.cnt.x)
-		push!(yd,i.tail.coord.cnt.y)
-		push!(yd,i.head.coord.cnt.y)
+		push!(xd,i.tail.coord.x)
+		push!(xd,i.head.coord.x)
+		push!(yd,i.tail.coord.y)
+		push!(yd,i.head.coord.y)
 		plot!(p,xd,yd,xticks = ylimin:5:ylimax,xlims=(ylimin,ylimax),yticks = ylimin:5:ylimax,label="")
 		xd=[]
 		yd=[]

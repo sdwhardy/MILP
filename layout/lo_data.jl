@@ -1,9 +1,7 @@
-################################################################################
-#=function lod_concessionAreas()
-    areas=[38.0,19.0,23.0,14.0,18.0,35.0,12.0,16.0]
-    return areas
-end=#
 ###############################################################################
+####################### Problem size adjustments ##############################
+###############################################################################
+#set maximum distance to connect the gens to oss with MV cable
 function lod_mxMvKm(cn)
     if cn.kv == 33.0
         km=5
@@ -20,19 +18,47 @@ function lod_mnKm()
     return 15.0
 end
 ################################################################################
+#set minimum distance between any neighbouring OSS
 function lod_mnDist()
     return 2
 end
 ################################################################################
+#sets offset of sourounding OSS from center generator
 function lod_genSpc()
     return 2.5
 end
 ################################################################################
-#sets multiple of turbine diameter for oss spacing
-function lod_ossSpc()
-    return 100
+#set west buffer on domain
+function loD_wbuff()
+    buffer=0
+    return buffer
 end
 ################################################################################
+#set east buffer on domain
+function loD_ebuff()
+    buffer=0
+    return buffer
+end
+################################################################################
+#set south buffer on domain
+function loD_sbuff()
+    buffer=2.5
+    return buffer
+end
+################################################################################
+#set north buffer on domain
+function loD_nbuff()
+    buffer=0
+    return buffer
+end
+################################################################################
+#sets multiple of turbine diameter for oss spacing
+#function lod_ossSpc()
+#    return 100
+#end
+###############################################################################
+####################### Voltage,power,wind adjustments ########################
+###############################################################################
 #set collector voltage
 function lod_cncsKv()
     return 33.0
@@ -75,7 +101,9 @@ function lod_cncesTrbs(nc)
     end
     return trbs
 end
-################################################################################
+###############################################################################
+####################### OWPP/pcc location #####################################
+###############################################################################
 function lod_cncesGps()
     c0=[]
     c1=[]
@@ -137,31 +165,9 @@ function lod_pccGps()
     push!(pcc,pcc1)
     return pcc
 end
-################################################################################
-#set west buffer on domain
-function loD_wbuff()
-    buffer=0
-    return buffer
-end
-################################################################################
-#set east buffer on domain
-function loD_ebuff()
-    buffer=0
-    return buffer
-end
-################################################################################
-#set south buffer on domain
-function loD_sbuff()
-    buffer=2.5
-    return buffer
-end
-################################################################################
-#set north buffer on domain
-function loD_nbuff()
-    buffer=0
-    return buffer
-end
-################################################################################
+###############################################################################
+####################### Turbine Data ##########################################
+###############################################################################
 #Default torque curve of the turbine
 #used only in case of specified wind profile other than the default and no specific turbine
 function wndD_TrqCrv(trb)
@@ -281,3 +287,16 @@ trb.pwr=[0
 return nothing
 end
 #######################################################
+
+
+
+
+
+################################################################################
+######################## Removed Functions #####################################
+################################################################################
+#=function lod_concessionAreas()
+    areas=[38.0,19.0,23.0,14.0,18.0,35.0,12.0,16.0]
+    return areas
+end=#
+################################################################################
