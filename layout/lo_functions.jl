@@ -5,22 +5,22 @@
 function lof_layoutOcn()
     ocean=eez()#build the eez in the ocean
     lof_shoreConnect(ocean.pccs)#add the gps of points of common coupling
-    ocean.reg=lof_layoutZone(length(ocean.pccs))#add the region with concessions
+    ocean.cnces=lof_layoutZone(length(ocean.pccs))#add the region with concessions
     base=lof_bseCrd(ocean)#find base coordinates
     lof_dists(ocean,base)#set layout in terms of base
     os=lof_rotateOcn(ocean)#apply rotation to align n-s with y
     lof_slideOcn(ocean,os)#slide to align western most point with x=0
     lof_ewbnd(ocean)#find the boundary of region containnig oss
-    #=println(ocean.reg.bnd.wbnd.lims)
-    println(ocean.reg.bnd.wbnd.lmodel)
-    println(ocean.reg.bnd.ebnd.lims)
-    println(ocean.reg.bnd.ebnd.lmodel)=#
+    #=println(ocean.bnd.wbnd.lims)
+    println(ocean.bnd.wbnd.lmodel)
+    println(ocean.bnd.ebnd.lims)
+    println(ocean.bnd.ebnd.lmodel)=#
     lof_osss(ocean)#add all osss within boundary
     lof_GoArcs(ocean)#add all gen to oss arcs within boundary
     lof_OpArcs(ocean)#add all oss to pcc arcs within boundary
     lof_OoArcs(ocean)#add all oss to oss arcs within boundary
-    #println(length(ocean.reg.gOarcs)+length(ocean.reg.oOarcs)+length(ocean.reg.oParcs))
-    #println(length(ocean.reg.cnces)+length(ocean.reg.osss)+length(ocean.pccs))
+    #println(length(ocean.gOarcs)+length(ocean.oOarcs)+length(ocean.oParcs))
+    #println(length(ocean.cnces)+length(ocean.osss)+length(ocean.pccs))
     ppf_printOcn(ocean)#print ocean
 end
 ################################################################################
@@ -73,7 +73,7 @@ function lof_layoutZone(num)
     wnds=lod_cncesWnd(length(gpss))#get wind profiles for each concession
     trbs=lod_cncesTrbs(length(gpss))#get turbine info for each concession
     #areas=lod_concessionAreas()
-    zone=region()
+    zone=Array{cnce,1}()
     #loop through all concessions
     for i=1:length(gpss)
         concession=cnce()
@@ -85,7 +85,7 @@ function lof_layoutZone(num)
         concession.kv=lod_cncsKv()#set collector kv
         concession.num=num+i
         #concession.area=areas[i]
-        push!(zone.cnces,deepcopy(concession))
+        push!(zone,deepcopy(concession))
     end
     return zone
 end
@@ -112,7 +112,7 @@ end
 function lof_dists(ocean,base)
     km=1
     lnth_1deg_LT=111*km
-    lof_dist(ocean.reg.cnces,base,lnth_1deg_LT,km)
+    lof_dist(ocean.cnces,base,lnth_1deg_LT,km)
     lof_dist(ocean.pccs,base,lnth_1deg_LT,km)
 end
 ################################################################################
@@ -131,17 +131,17 @@ end
 ################################################################################
 #rotates the entire region
 function lof_rotateOcn(ocean)
-    theta=atan((ocean.pccs[length(ocean.pccs)].coord.x-ocean.reg.cnces[length(ocean.reg.cnces)].coord.x)/(ocean.reg.cnces[length(ocean.reg.cnces)].coord.y-ocean.pccs[length(ocean.pccs)].coord.y))
+    theta=atan((ocean.pccs[length(ocean.pccs)].coord.x-ocean.cnces[length(ocean.cnces)].coord.x)/(ocean.cnces[length(ocean.cnces)].coord.y-ocean.pccs[length(ocean.pccs)].coord.y))
     os=0.0
-    os=lof_rot(ocean.reg.cnces,theta,os)
+    os=lof_rot(ocean.cnces,theta,os)
     os=lof_rot(ocean.pccs,theta,os)
     return os
 end
 ################################################################################
 #translates the entire region
 function lof_slideOcn(ocean,os)
-    for i=1:length(ocean.reg.cnces)
-        ocean.reg.cnces[i].coord.x=lof_shift(ocean.reg.cnces[i].coord.x,abs(os))
+    for i=1:length(ocean.cnces)
+        ocean.cnces[i].coord.x=lof_shift(ocean.cnces[i].coord.x,abs(os))
     end
     for i=1:length(ocean.pccs)
         ocean.pccs[i].coord.x=lof_shift(ocean.pccs[i].coord.x,abs(os))
@@ -254,11 +254,11 @@ function lof_ewbnd(ocn)
     Ebnd=Array{xy,1}()
 
     strt=ocn.pccs[2].coord#define 0 point
-    fnsh=ocn.reg.cnces[length(ocn.reg.cnces)].coord#define furthest concession
+    fnsh=ocn.cnces[length(ocn.cnces)].coord#define furthest concession
     push!(Wbnd,deepcopy(strt))
     push!(Ebnd,deepcopy(strt))
     push!(all,deepcopy(ocn.pccs[1].coord))
-    for i in ocn.reg.cnces[1:length( ocn.reg.cnces)]
+    for i in ocn.cnces[1:length( ocn.cnces)]
         push!(all,deepcopy(i.coord))
     end
 
@@ -267,20 +267,20 @@ function lof_ewbnd(ocn)
     Ebnd=lof_eBnd(Ebnd,fnsh,deepcopy(all))#finds eastern boundary
     Wbnd=lof_addWBuff(Wbnd)#add buffer to western boundary
     Ebnd=lof_addEBuff(Ebnd)#add buffer to eastern boundary
-    ocn.reg.bnd.wbnd.lims=Wbnd
-    ocn.reg.bnd.ebnd.lims=reverse(Ebnd,1)
+    ocn.bnd.wbnd.lims=Wbnd
+    ocn.bnd.ebnd.lims=reverse(Ebnd,1)
 
     #set calculated n-s boundary points
-    push!(ocn.reg.bnd.nbnd.lims,ocn.reg.bnd.wbnd.lims[length(ocn.reg.bnd.wbnd.lims)])
-    push!(ocn.reg.bnd.nbnd.lims,ocn.reg.bnd.ebnd.lims[1])
-    push!(ocn.reg.bnd.sbnd.lims,ocn.reg.bnd.ebnd.lims[length(ocn.reg.bnd.ebnd.lims)])
-    push!(ocn.reg.bnd.sbnd.lims,ocn.reg.bnd.wbnd.lims[1])
+    push!(ocn.bnd.nbnd.lims,ocn.bnd.wbnd.lims[length(ocn.bnd.wbnd.lims)])
+    push!(ocn.bnd.nbnd.lims,ocn.bnd.ebnd.lims[1])
+    push!(ocn.bnd.sbnd.lims,ocn.bnd.ebnd.lims[length(ocn.bnd.ebnd.lims)])
+    push!(ocn.bnd.sbnd.lims,ocn.bnd.wbnd.lims[1])
 
     #calculates linear model for boundary
-    lof_lnrBnd(ocn.reg.bnd.ebnd)
-    lof_lnrBnd(ocn.reg.bnd.wbnd)
-    lof_lnrBnd(ocn.reg.bnd.sbnd)
-    lof_lnrBnd(ocn.reg.bnd.nbnd)
+    lof_lnrBnd(ocn.bnd.ebnd)
+    lof_lnrBnd(ocn.bnd.wbnd)
+    lof_lnrBnd(ocn.bnd.sbnd)
+    lof_lnrBnd(ocn.bnd.nbnd)
 
     return nothing
 end
@@ -446,13 +446,13 @@ end
 ###############################################################################
 function lof_osss(ocn)
 
-    num=length(ocn.pccs)+length(ocn.reg.cnces)+1
-    cns=reverse(ocn.reg.cnces,1)
+    num=length(ocn.pccs)+length(ocn.cnces)+1
+    cns=reverse(ocn.cnces,1)
     osss=Array{oss,1}()
 
     for i in cns
         gen=i.coord
-        num=lof_ossLine(gen,num,ocn.reg,osss)#lay oss
+        num=lof_ossLine(gen,num,ocn,osss)#lay oss
     end
     nl=1
     ol=2
@@ -461,7 +461,7 @@ function lof_osss(ocn)
         lof_ossSprcfy(osss)
         nl=deepcopy(length(osss))
     end
-    ocn.reg.osss=deepcopy(osss)
+    ocn.osss=deepcopy(osss)
 end
 ###############################################################################
 
@@ -505,22 +505,22 @@ end
 ###############################################################################
 #OSS to OSS connection
 function lof_OpArcs(ocn)
-    for i in ocn.reg.osss
+    for i in ocn.osss
         for j in ocn.pccs
             km=lof_pnt2pnt_dist(i.coord,j.coord)
-            push!(ocn.reg.oParcs,lof_buldOpArc(i,j,km))
+            push!(ocn.oParcs,lof_buldOpArc(i,j,km))
         end
     end
 end
 ###############################################################################
 #generator to OSS connection
 function lof_GoArcs(ocn)
-    for i in ocn.reg.cnces
+    for i in ocn.cnces
         mxKm=lod_mxMvKm(i)
-        for j in ocn.reg.osss
+        for j in ocn.osss
             km=lof_pnt2pnt_dist(i.coord,j.coord)
             if km <= mxKm
-                push!(ocn.reg.gOarcs,lof_buldGoArc(i,j,km))
+                push!(ocn.gOarcs,lof_buldGoArc(i,j,km))
             else
             end
         end
@@ -529,12 +529,12 @@ end
 ###############################################################################
 #OSS to OSS connection
 function lof_OoArcs(ocn)
-    for i=1:length(ocn.reg.osss)
+    for i=1:length(ocn.osss)
         mnKm=lod_mnKm()
-        for j=(i+1):length(ocn.reg.osss)
-            km=lof_pnt2pnt_dist(ocn.reg.osss[i].coord,ocn.reg.osss[j].coord)
+        for j=(i+1):length(ocn.osss)
+            km=lof_pnt2pnt_dist(ocn.osss[i].coord,ocn.osss[j].coord)
             if mnKm <= km
-                push!(ocn.reg.oOarcs,lof_buldOoArc(ocn.reg.osss[i],ocn.reg.osss[j],km))
+                push!(ocn.oOarcs,lof_buldOoArc(ocn.osss[i],ocn.osss[j],km))
             else
             end
         end
@@ -597,11 +597,11 @@ function lof_ewbnd(ocn)
     Wbnd=Array{xy,1}()
     Ebnd=Array{xy,1}()
 
-    strt=ocn.reg.cnces[1].coord#define 0 point
-    fnsh=ocn.reg.cnces[length(ocn.reg.cnces)].coord#define furthest concession
+    strt=ocn.cnces[1].coord#define 0 point
+    fnsh=ocn.cnces[length(ocn.cnces)].coord#define furthest concession
     push!(Wbnd,deepcopy(strt))
     push!(Ebnd,deepcopy(strt))
-    for i in ocn.reg.cnces[2:length( ocn.reg.cnces)]
+    for i in ocn.cnces[2:length( ocn.cnces)]
         push!(all,deepcopy(i.coord))
     end
 
@@ -610,20 +610,20 @@ function lof_ewbnd(ocn)
     Ebnd=lof_eBnd(Ebnd,fnsh,deepcopy(all))#finds eastern boundary
     Wbnd=lof_addWBuff(Wbnd)#add buffer to western boundary
     Ebnd=lof_addEBuff(Ebnd)#add buffer to eastern boundary
-    ocn.reg.bnd.wbnd.lims=Wbnd
-    ocn.reg.bnd.ebnd.lims=reverse(Ebnd,1)
+    ocn.bnd.wbnd.lims=Wbnd
+    ocn.bnd.ebnd.lims=reverse(Ebnd,1)
 
     #set calculated n-s boundary points
-    push!(ocn.reg.bnd.nbnd.lims,ocn.reg.bnd.wbnd.lims[length(ocn.reg.bnd.wbnd.lims)])
-    push!(ocn.reg.bnd.nbnd.lims,ocn.reg.bnd.ebnd.lims[1])
-    push!(ocn.reg.bnd.sbnd.lims,ocn.reg.bnd.ebnd.lims[length(ocn.reg.bnd.ebnd.lims)])
-    push!(ocn.reg.bnd.sbnd.lims,ocn.reg.bnd.wbnd.lims[1])
+    push!(ocn.bnd.nbnd.lims,ocn.bnd.wbnd.lims[length(ocn.bnd.wbnd.lims)])
+    push!(ocn.bnd.nbnd.lims,ocn.bnd.ebnd.lims[1])
+    push!(ocn.bnd.sbnd.lims,ocn.bnd.ebnd.lims[length(ocn.bnd.ebnd.lims)])
+    push!(ocn.bnd.sbnd.lims,ocn.bnd.wbnd.lims[1])
 
     #calculates linear model for boundary
-    lof_lnrBnd(ocn.reg.bnd.ebnd)
-    lof_lnrBnd(ocn.reg.bnd.wbnd)
-    lof_lnrBnd(ocn.reg.bnd.sbnd)
-    lof_lnrBnd(ocn.reg.bnd.nbnd)
+    lof_lnrBnd(ocn.bnd.ebnd)
+    lof_lnrBnd(ocn.bnd.wbnd)
+    lof_lnrBnd(ocn.bnd.sbnd)
+    lof_lnrBnd(ocn.bnd.nbnd)
 
     return nothing
 end=#
@@ -670,16 +670,16 @@ end=#
 ###############################################################################
 #=function lof_sbnd(ocn)
     cns=Array{Float64,1}()
-    for i in ocn.reg.cnces
+    for i in ocn.cnces
         push!(cns,i.coord.y)
     end
     tmp=findmin(cns)[2]
     tmp1=findmax(cns)[2]
     cns[tmp]=cns[tmp1]+10
-    cls0=deepcopy(ocn.reg.cnces[tmp].coord)
+    cls0=deepcopy(ocn.cnces[tmp].coord)
     cls0.y=cls0.y-buffer
     tmp=findmin(cns)[2]
-    cls1=deepcopy(ocn.reg.cnces[tmp].coord)
+    cls1=deepcopy(ocn.cnces[tmp].coord)
     cls1.y=cls1.y-buffer
     cns=[]
     push!(cns,cls0)
@@ -695,7 +695,7 @@ function lof_outerbnd(ocn)
     Wbnd=Array{xy,1}()
     Ebnd=Array{xy,1}()
     strt=ocn.pccs[length(ocn.pccs)].coord#define 0 point
-    fnsh=ocn.reg.cnces[length(ocn.reg.cnces)].coord#define furthest concession
+    fnsh=ocn.cnces[length(ocn.cnces)].coord#define furthest concession
     push!(Wbnd,strt)
     push!(Ebnd,strt)
 #combine all points into single array for processing
@@ -704,7 +704,7 @@ function lof_outerbnd(ocn)
         push!(all,all_pcc[length(all_pcc)])
     end
 
-    for i in ocn.reg.cnces
+    for i in ocn.cnces
         #push!(all_oss,deepcopy(i.coord))
         push!(all,deepcopy(i.coord))
     end
@@ -770,13 +770,13 @@ function lof_ossLine(y,elx,wlx,spc,num,osss)
 end
 ###############################################################################
 function lof_osss(ocn)
-    strtPnt,spc=lof_farthest(ocn.pccs,ocn.reg)#selects either nw or ne to start and sets the spcing
+    strtPnt,spc=lof_farthest(ocn.pccs,ocn)#selects either nw or ne to start and sets the spcing
     ns=strtPnt.y
-    num=length(ocn.pccs)+length(ocn.reg.cnces)+1
-    while ns>ocn.reg.bnd.sbnd.lims[1].y
-        elx=lof_eLim(ns,ocn.reg.bnd.ebnd)
-        wlx=lof_wLim(ns,ocn.reg.bnd.wbnd)
-        num=lof_ossLine(ns,elx,wlx,spc,num,ocn.reg.osss)#lay a line of oss
+    num=length(ocn.pccs)+length(ocn.cnces)+1
+    while ns>ocn.bnd.sbnd.lims[1].y
+        elx=lof_eLim(ns,ocn.bnd.ebnd)
+        wlx=lof_wLim(ns,ocn.bnd.wbnd)
+        num=lof_ossLine(ns,elx,wlx,spc,num,ocn.osss)#lay a line of oss
         ns=ns-abs(spc)
     end
 end=#
@@ -861,13 +861,13 @@ function lof_ossLine(y,elx,wlx,spc,num,osss)
 end
 ###############################################################################
 function lof_osss(ocn)
-    strtPnt,spc=lof_farthest(ocn.pccs,ocn.reg)#selects either nw or ne to start and sets the spcing
+    strtPnt,spc=lof_farthest(ocn.pccs,ocn)#selects either nw or ne to start and sets the spcing
     ns=strtPnt.y
-    num=length(ocn.pccs)+length(ocn.reg.cnces)+1
-    while ns>ocn.reg.bnd.sbnd.lims[1].y
-        elx=lof_eLim(ns,ocn.reg.bnd.ebnd)
-        wlx=lof_wLim(ns,ocn.reg.bnd.wbnd)
-        num=lof_ossLine(ns,elx,wlx,spc,num,ocn.reg.osss)#lay a line of oss
+    num=length(ocn.pccs)+length(ocn.cnces)+1
+    while ns>ocn.bnd.sbnd.lims[1].y
+        elx=lof_eLim(ns,ocn.bnd.ebnd)
+        wlx=lof_wLim(ns,ocn.bnd.wbnd)
+        num=lof_ossLine(ns,elx,wlx,spc,num,ocn.osss)#lay a line of oss
         ns=ns-abs(spc)
     end
 end=#

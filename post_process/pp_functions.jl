@@ -49,39 +49,39 @@ function ppf_printOcn(ocean)
 		push!(y,i.coord.y)
 		#println(i.num)
 	end
-	for i in ocean.reg.cnces
+	for i in ocean.cnces
 		push!(x,i.coord.x)
 		push!(y,i.coord.y)
 		#println(i.num)
 	end
 	xb=Array{Float64,1}()
 	yb=Array{Float64,1}()
-	#println(ocean.reg.bnd)
-	for i in ocean.reg.bnd.wbnd.lims
+	#println(ocean.bnd)
+	for i in ocean.bnd.wbnd.lims
 		push!(xb,i.x)
 		push!(yb,i.y)
 	end
-	#println(ocean.reg.bnd)
-	for i in ocean.reg.bnd.nbnd.lims
+	#println(ocean.bnd)
+	for i in ocean.bnd.nbnd.lims
 		push!(xb,i.x)
 		push!(yb,i.y)
 	end
-	for i in ocean.reg.bnd.ebnd.lims
+	for i in ocean.bnd.ebnd.lims
 		push!(xb,i.x)
 		push!(yb,i.y)
 	end
-	for i in ocean.reg.bnd.sbnd.lims
+	for i in ocean.bnd.sbnd.lims
 		push!(xb,i.x)
 		push!(yb,i.y)
 	end
 	xoss=Array{Float64,1}()
 	yoss=Array{Float64,1}()
-	for i in ocean.reg.osss
+	for i in ocean.osss
 		push!(xoss,i.coord.x)
 		push!(yoss,i.coord.y)
 		#println(i.coord)
 	end
-	#println(lof_pnt2pnt_dist(ocean.reg.osss[2].coord,ocean.reg.osss[3].coord))
+	#println(lof_pnt2pnt_dist(ocean.osss[2].coord,ocean.osss[3].coord))
 	os=1
 	xlimax=trunc(Int,findmax(x)[1])+os
 	ylimax=trunc(Int,findmax(y)[1])+os
@@ -90,12 +90,12 @@ function ppf_printOcn(ocean)
 	plotly()
 
 	p=plot(xoss,yoss,seriestype=:scatter,xticks = ylimin:5:ylimax,xlims=(ylimin,ylimax),yticks = ylimin:5:ylimax)
-	#plot!(p,x,y,seriestype=:scatter,xticks = ylimin:5:ylimax,xlims=(ylimin,ylimax),yticks = ylimin:5:ylimax)
-	#plot!(p,xb,yb,xticks = ylimin:5:ylimax,xlims=(ylimin,ylimax),yticks = ylimin:5:ylimax)
+	plot!(p,x,y,seriestype=:scatter,xticks = ylimin:5:ylimax,xlims=(ylimin,ylimax),yticks = ylimin:5:ylimax)
+	plot!(p,xb,yb,xticks = ylimin:5:ylimax,xlims=(ylimin,ylimax),yticks = ylimin:5:ylimax)
 
 	xd=Array{Float64,1}()
 	yd=Array{Float64,1}()
-	#=for i in ocean.reg.gOarcs
+	for i in ocean.gOarcs
 		push!(xd,i.tail.coord.x)
 		push!(xd,i.head.coord.x)
 		push!(yd,i.tail.coord.y)
@@ -104,7 +104,7 @@ function ppf_printOcn(ocean)
 		xd=[]
 		yd=[]
 	end
-	for i in ocean.reg.oParcs
+	for i in ocean.oParcs
 		push!(xd,i.tail.coord.x)
 		push!(xd,i.head.coord.x)
 		push!(yd,i.tail.coord.y)
@@ -112,8 +112,8 @@ function ppf_printOcn(ocean)
 		plot!(p,xd,yd,xticks = ylimin:5:ylimax,xlims=(ylimin,ylimax),yticks = ylimin:5:ylimax,label="")
 		xd=[]
 		yd=[]
-	end=#
-	for i in ocean.reg.oOarcs
+	end
+	for i in ocean.oOarcs
 		push!(xd,i.tail.coord.x)
 		push!(xd,i.head.coord.x)
 		push!(yd,i.tail.coord.y)
