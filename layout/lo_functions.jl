@@ -17,6 +17,7 @@ function lof_layoutOcn()
     println(ocean.bnd.ebnd.lmodel)=#
     lof_osss(ocean)#add all osss within boundary
     lof_GoArcs(ocean)#add all gen to oss arcs within boundary
+    lof_GpArcs(ocean)#add all gen to pcc arcs within boundary
     lof_OpArcs(ocean)#add all oss to pcc arcs within boundary
     lof_OoArcs(ocean)#add all oss to oss arcs within boundary
     #println(length(ocean.gOarcs)+length(ocean.oOarcs)+length(ocean.oParcs))
@@ -336,7 +337,7 @@ function lof_ossLine(xy,num,rg,osss)
     wlx=lof_wLim(xy.y,rg.bnd.wbnd)
 
     #add oss to the north of generation
-    if xy.y+spc <= mxy
+    if (xy.y+spc <= mxy && lod_noss()==true)
         x=max(xy.x, lof_wLim(xy.y+spc,rg.bnd.wbnd))
         x=min(x, lof_eLim(xy.y+spc,rg.bnd.ebnd))
         osub=oss()
@@ -350,7 +351,7 @@ function lof_ossLine(xy,num,rg,osss)
 
 
     #add oss to the east of generation
-    if xy.x+spc <= elx
+    if (xy.x+spc <= elx && lod_eoss()==true)
         osub=oss()
         osub.coord.x=deepcopy(xy.x+spc)
         osub.coord.y=deepcopy(xy.y)
@@ -360,7 +361,7 @@ function lof_ossLine(xy,num,rg,osss)
     else
     end
     #add oss to the east of generation
-    if xy.x != elx
+    if (xy.x != elx && lod_eosss()==true)
         x=min(xy.x+2*spc, elx)
         osub=oss()
         osub.coord.x=deepcopy(x)
@@ -372,16 +373,18 @@ function lof_ossLine(xy,num,rg,osss)
     end
 
     #Oss at gen location
-    osub=oss()
-    osub.coord.x=deepcopy(xy.x)
-    osub.coord.y=deepcopy(xy.y)
-    osub.num=num
-    push!(osss,osub)
-    num=num+1
+    if (lod_goss()==true)
+        osub=oss()
+        osub.coord.x=deepcopy(xy.x)
+        osub.coord.y=deepcopy(xy.y)
+        osub.num=num
+        push!(osss,osub)
+        num=num+1
+    else
+    end
 
     #add oss to the south of generation
-
-    if xy.y-spc >= mny
+    if (xy.y-spc >= mny && lod_soss()==true)
         osub=oss()
         x=max(xy.x, lof_wLim(xy.y-spc,rg.bnd.wbnd))
         x=min(x, lof_eLim(xy.y-spc,rg.bnd.ebnd))
@@ -392,7 +395,7 @@ function lof_ossLine(xy,num,rg,osss)
         num=num+1
     end
     #add oss to the west of generation
-    if xy.x-spc >= wlx
+    if (xy.x-spc >= wlx && lod_woss()==true)
         osub=oss()
         osub.coord.x=deepcopy(xy.x-spc)
         osub.coord.y=deepcopy(xy.y)
@@ -402,7 +405,7 @@ function lof_ossLine(xy,num,rg,osss)
     else
     end
     #add oss to the west of generation
-    if xy.x != wlx
+    if (xy.x != wlx && lod_wosss()==true)
         x=max(xy.x-2*spc, wlx)
         osub=oss()
         osub.coord.x=deepcopy(x)
@@ -492,6 +495,17 @@ function lof_buldOpArc(tl,hd,km)
     return a
 end
 ###############################################################################
+function lof_buldGpArc(tl,hd,km)
+    a=gParc()
+    a.head=hd
+    a.tail=tl
+    #a.mva=tl.mva
+    #a.kv=tl.kv
+    a.lngth=deepcopy(km)
+    #a.wnd=tl.wnd
+    return a
+end
+###############################################################################
 function lof_buldOoArc(tl,hd,km)
     a=oOarc()
     a.head=hd
@@ -541,6 +555,20 @@ function lof_OoArcs(ocn)
     end
 end
 ##############################################################################
+#generator to Pcc connection
+function lof_GpArcs(ocn)
+    for i in ocn.cnces
+        mxKm=lod_mxMv2PccKm(i)
+        for j in ocn.pccs
+            km=lof_pnt2pnt_dist(i.coord,j.coord)
+            if km <= mxKm
+                push!(ocn.gParcs,lof_buldGpArc(i,j,km))
+            else
+            end
+        end
+    end
+end
+###############################################################################
 
 
 

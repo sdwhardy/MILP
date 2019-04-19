@@ -1,6 +1,53 @@
 ###############################################################################
 ####################### Problem size adjustments ##############################
 ###############################################################################
+#place OSS north of generation?
+function lod_noss()
+    return false
+end
+###############################################################################
+#place OSS south of generation?
+function lod_soss()
+    return false
+end
+###############################################################################
+#place OSS swest of generation?
+function lod_woss()
+    return true
+end
+###############################################################################
+#place OSS east of generation?
+function lod_eoss()
+    return true
+end
+###############################################################################
+#place OSS on generation?
+function lod_goss()
+    return true
+end
+###############################################################################
+#extend OSS to the east of generation?
+function lod_eosss()
+    return false
+end
+###############################################################################
+#extend OSS to the west of generation?
+function lod_wosss()
+    return true
+end
+###############################################################################
+#set maximum distance to connect the gens to pccs with MV cable
+function lod_mxMv2PccKm(cn)
+    if cn.kv == 33.0
+        km=15
+    elseif cn.kv==66.0
+        km=30
+    else
+        error("Cable MV does not match option!")
+    end
+    return km
+end
+###############################################################################
 #set maximum distance to connect the gens to oss with MV cable
 function lod_mxMvKm(cn)
     if cn.kv == 33.0

@@ -104,6 +104,20 @@ mutable struct oParc
       #wnd::wind
 end
 oParc()=oParc(pcc(),oss(),69.69,69.69,69.69,69.69,69.69)
+################################################################################
+mutable struct gParc
+      head::pcc
+      tail::cnce
+      #mva::Float64
+      #kv::Float64
+      cost::Float64
+      xr::Float64
+      xl::Float64
+      yb::Float64
+      lngth::Float64
+      #wnd::wind
+end
+gParc()=gParc(pcc(),cnce(),69.69,69.69,69.69,69.69,69.69)
 ###################################################################
 mutable struct gOarc
       head::oss
@@ -148,13 +162,14 @@ mutable struct eez
       gOarcs::Array{gOarc}
       oOarcs::Array{oOarc}
       oParcs::Array{oParc}
+      gParcs::Array{gParc}
       bnd::domain
       #area::Float64
       pccs::Array{pcc}
       #coord::coord
 end
 #eez()=eez(gps(),region(),69.69,[],coord())
-eez()=eez([],[],[],[],[],domain(),[])
+eez()=eez([],[],[],[],[],[],domain(),[])
 ###################################################################
 
 
