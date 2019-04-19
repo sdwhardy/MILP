@@ -47,10 +47,12 @@ function ppf_printOcn(ocean)
 	for i in ocean.pccs
 		push!(x,i.coord.cnt.x)
 		push!(y,i.coord.cnt.y)
+		println(i.num)
 	end
 	for i in ocean.reg.cnces
 		push!(x,i.coord.cnt.x)
 		push!(y,i.coord.cnt.y)
+		println(i.num)
 	end
 	xb=Array{Float64,1}()
 	yb=Array{Float64,1}()
@@ -72,14 +74,14 @@ function ppf_printOcn(ocean)
 		push!(xb,i.x)
 		push!(yb,i.y)
 	end
-	xc=Array{Float64,1}()
-	yc=Array{Float64,1}()
+	xoss=Array{Float64,1}()
+	yoss=Array{Float64,1}()
 	for i in ocean.reg.osss
-		push!(xc,i.coord.cnt.x)
-		push!(yc,i.coord.cnt.y)
-
+		push!(xoss,i.coord.cnt.x)
+		push!(yoss,i.coord.cnt.y)
+		println(i.coord.cnt)
 	end
-
+	#println(lof_pnt2pnt_dist(ocean.reg.osss[2].coord.cnt,ocean.reg.osss[3].coord.cnt))
 	os=1
 	xlimax=trunc(Int,findmax(x)[1])+os
 	ylimax=trunc(Int,findmax(y)[1])+os
@@ -87,14 +89,13 @@ function ppf_printOcn(ocean)
 	ylimin=trunc(Int,findmin(y)[1])-os
 	plotly()
 
-	#plot(p,xc,yc,seriestype=:scatter,xticks = ylimin:5:ylimax,xlims=(ylimin,ylimax),yticks = ylimin:5:ylimax)
-	p=plot(xc,yc,seriestype=:scatter,xticks = ylimin:5:ylimax,xlims=(ylimin,ylimax),yticks = ylimin:5:ylimax)
-	plot!(p,x,y,seriestype=:scatter,xticks = ylimin:5:ylimax,xlims=(ylimin,ylimax),yticks = ylimin:5:ylimax)
-	plot!(p,xb,yb,xticks = ylimin:5:ylimax,xlims=(ylimin,ylimax),yticks = ylimin:5:ylimax)
+	p=plot(xoss,yoss,seriestype=:scatter,xticks = ylimin:5:ylimax,xlims=(ylimin,ylimax),yticks = ylimin:5:ylimax)
+	#plot!(p,x,y,seriestype=:scatter,xticks = ylimin:5:ylimax,xlims=(ylimin,ylimax),yticks = ylimin:5:ylimax)
+	#plot!(p,xb,yb,xticks = ylimin:5:ylimax,xlims=(ylimin,ylimax),yticks = ylimin:5:ylimax)
 
-	#=xd=Array{Float64,1}()
+	xd=Array{Float64,1}()
 	yd=Array{Float64,1}()
-	for i in ocean.reg.gOarcs
+	#=for i in ocean.reg.gOarcs
 		push!(xd,i.tail.coord.cnt.x)
 		push!(xd,i.head.coord.cnt.x)
 		push!(yd,i.tail.coord.cnt.y)
@@ -111,7 +112,7 @@ function ppf_printOcn(ocean)
 		plot!(p,xd,yd,xticks = ylimin:5:ylimax,xlims=(ylimin,ylimax),yticks = ylimin:5:ylimax,label="")
 		xd=[]
 		yd=[]
-	end
+	end=#
 	for i in ocean.reg.oOarcs
 		push!(xd,i.tail.coord.cnt.x)
 		push!(xd,i.head.coord.cnt.x)
@@ -120,7 +121,7 @@ function ppf_printOcn(ocean)
 		plot!(p,xd,yd,xticks = ylimin:5:ylimax,xlims=(ylimin,ylimax),yticks = ylimin:5:ylimax,label="")
 		xd=[]
 		yd=[]
-	end=#
+	end#==#
 	p
 	end
 ################################################################################

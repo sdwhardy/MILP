@@ -3,6 +3,27 @@
     areas=[38.0,19.0,23.0,14.0,18.0,35.0,12.0,16.0]
     return areas
 end=#
+###############################################################################
+function lod_mxMvKm(cn)
+    if cn.kv == 33.0
+        km=5
+    elseif cn.kv==66.0
+        km=20
+    else
+        error("Cable MV does not match option!")
+    end
+    return km
+end
+###############################################################################
+#set min oss to oss arc length
+function lod_mnKm()
+    return 15.0
+end
+################################################################################
+function lod_mnDist()
+    return 2
+end
+################################################################################
 function lod_genSpc()
     return 2.5
 end

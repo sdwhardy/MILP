@@ -183,26 +183,26 @@ end
 #adds specified buffer to the west
 function lof_addWBuff(bnd)
     wbuff=loD_wbuff()
-    sbuff=loD_sbuff()
+    #sbuff=loD_sbuff()
     nbuff=loD_nbuff()
     for i in bnd
         i.x=i.x-wbuff
     end
     bnd[length(bnd)].y=bnd[length(bnd)].y+nbuff
-    bnd[1].y=bnd[1].y-sbuff
+    #bnd[1].y=bnd[1].y-sbuff
     return bnd
 end
 ################################################################################
 #adds specified buffer to the east
 function lof_addEBuff(bnd)
     ebuff=loD_ebuff()
-    sbuff=loD_sbuff()
+    #sbuff=loD_sbuff()
     nbuff=loD_nbuff()
     for i in bnd
         i.x=i.x+ebuff
     end
     bnd[length(bnd)].y=bnd[length(bnd)].y+nbuff
-    bnd[1].y=bnd[1].y-sbuff
+    #bnd[1].y=bnd[1].y-sbuff
     return bnd
 end
 ################################################################################
@@ -283,20 +283,6 @@ end
 ##############################################################################################################################################################
 ############################################################################### arcs #########################################################################
 ##############################################################################################################################################################
-function lof_mxMvKm(cn)
-    if cn.kv == 33.0
-        km=10
-    elseif cn.kv==66.0
-        km=20
-    else
-        error("Cable MV does not match option!")
-    end
-    return km
-end
-function lof_mnKm()
-    return 5.0
-end
-###############################################################################
 function lof_buldGoArc(tl,hd,km)
     push!(hd.wnds,tl.wnd)
     push!(hd.mvas,tl.mva)
@@ -345,7 +331,7 @@ end
 #generator to OSS connection
 function lof_GoArcs(ocn)
     for i in ocn.reg.cnces
-        mxKm=lof_mxMvKm(i)
+        mxKm=lod_mxMvKm(i)
         for j in ocn.reg.osss
             km=lof_pnt2pnt_dist(i.coord.cnt,j.coord.cnt)
             if km <= mxKm
@@ -359,7 +345,7 @@ end
 #OSS to OSS connection
 function lof_OoArcs(ocn)
     for i=1:length(ocn.reg.osss)
-        mnKm=lof_mnKm()
+        mnKm=lod_mnKm()
         for j=(i+1):length(ocn.reg.osss)
             km=lof_pnt2pnt_dist(ocn.reg.osss[i].coord.cnt,ocn.reg.osss[j].coord.cnt)
             if mnKm <= km
@@ -459,13 +445,13 @@ function lof_ossLine2(xy,num,rg,osss)
     #add oss to the north of generation
     if xy.y+spc <= mxy
         x=max(xy.x, lof_wLim2(xy.y+spc,rg.bnd.wbnd))
-        x=min(xy.x, lof_eLim2(xy.y+spc,rg.bnd.ebnd))
-        print(xy.x)
+        x=min(x, lof_eLim2(xy.y+spc,rg.bnd.ebnd))
+        #=print(xy.x)
         print(" - ")
         println(xy.y)
         println(xy.y+spc)
         println(lof_wLim2(xy.y+spc,rg.bnd.wbnd))
-        println(x)
+        println(x)=#
         osub=oss()
         osub.coord.cnt.x=deepcopy(x)
         osub.coord.cnt.y=deepcopy(xy.y+spc)
@@ -511,7 +497,7 @@ function lof_ossLine2(xy,num,rg,osss)
     if xy.y-spc >= mny
         osub=oss()
         x=max(xy.x, lof_wLim2(xy.y-spc,rg.bnd.wbnd))
-        x=min(xy.x, lof_eLim2(xy.y-spc,rg.bnd.ebnd))
+        x=min(x, lof_eLim2(xy.y-spc,rg.bnd.ebnd))
         osub.coord.cnt.x=deepcopy(x)
         osub.coord.cnt.y=deepcopy(xy.y-spc)
         osub.num=num
@@ -542,6 +528,35 @@ function lof_ossLine2(xy,num,rg,osss)
     return num
 end
 ###############################################################################
+function lof_mrgOss(xy1,xy2)
+    xy1.x=(xy1.x+xy2.x)/2
+    xy1.y=(xy1.y+xy2.y)/2
+end
+###############################################################################
+function lof_renumOss(nm,j,osss)
+    for i in osss[j:length(osss)]
+        i.num=deepcopy(nm)
+        nm=nm+1
+    end
+end
+###############################################################################
+function lof_ossSprcfy(osss)
+    mnDist=lod_mnDist()
+    for i=1:length(osss)-1
+        j=i+1
+        while j<=length(osss)
+            if lof_pnt2pnt_dist(osss[i].coord.cnt,osss[j].coord.cnt) <= mnDist
+                lof_mrgOss(osss[i].coord.cnt,osss[j].coord.cnt)
+                nm=osss[j].num
+                deleteat!(osss,j)#remove the used point
+                println(length(osss))
+                lof_renumOss(nm,j,osss)
+            end
+            j=j+1
+        end
+    end
+end
+###############################################################################
 function lof_osss2(ocn)
 
     num=length(ocn.pccs)+length(ocn.reg.cnces)+1
@@ -550,7 +565,14 @@ function lof_osss2(ocn)
 
     for i in cns
         gen=i.coord.cnt
-        num=lof_ossLine2(gen,num,ocn.reg,osss)#lay a line of oss
+        num=lof_ossLine2(gen,num,ocn.reg,osss)#lay oss
+    end
+    nl=1
+    ol=2
+    while nl != ol
+        ol=deepcopy(length(osss))
+        lof_ossSprcfy(osss)
+        nl=deepcopy(length(osss))
     end
     ocn.reg.osss=deepcopy(osss)
 end
@@ -566,11 +588,16 @@ function lof_layoutOcn()
     os=lof_rotateOcn(ocean)#apply rotation to align n-s with y
     lof_slideOcn(ocean,os)#slide to align western most point with x=0
     lof_ewbnd(ocean)#find the boundary of region containnig oss
+    #=println(ocean.reg.bnd.wbnd.lims)
+    println(ocean.reg.bnd.wbnd.lmodel)
+    println(ocean.reg.bnd.ebnd.lims)
+    println(ocean.reg.bnd.ebnd.lmodel)=#
     lof_osss2(ocean)#add all osss within boundary
-    #lof_GoArcs(ocean)#add all gen to oss arcs within boundary
-    #lof_OpArcs(ocean)#add all oss to pcc arcs within boundary
-    #lof_OoArcs(ocean)#add all oss to oss arcs within boundary
-    #println(length(ocean.reg.gOarcs)+length(ocean.reg.oOarcs)+length(ocean.reg.oParcs))
+    lof_GoArcs(ocean)#add all gen to oss arcs within boundary
+    lof_OpArcs(ocean)#add all oss to pcc arcs within boundary
+    lof_OoArcs(ocean)#add all oss to oss arcs within boundary
+    println(length(ocean.reg.gOarcs)+length(ocean.reg.oOarcs)+length(ocean.reg.oParcs))
+    println(length(ocean.reg.cnces)+length(ocean.reg.osss)+length(ocean.pccs))
     ppf_printOcn(ocean)#print ocean
 end
 ################################################################################
