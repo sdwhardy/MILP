@@ -104,7 +104,8 @@ end
 function lof_dist(location,base,lnthLT,km)
     for i=1:length(location)
         location[i].coord.x=lof_deg2lgth(location[i].gps.lng-base.lng,lof_lg1deg(location[i].gps.lat+base.lng)*km)
-        location[i].coord.y=abs(lof_deg2lgth(location[i].gps.lat-base.lat,lnthLT))
+        #location[i].coord.y=abs(lof_deg2lgth(location[i].gps.lat-base.lat,lnthLT))
+        location[i].coord.y=lof_deg2lgth(location[i].gps.lat-base.lat,lnthLT)
     end
 end
 ################################################################################

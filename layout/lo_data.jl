@@ -201,9 +201,9 @@ function lod_pccGps()
     pcc0=Array{Float64,1}()
     pcc1=Array{Float64,1}()
     pcc=[]
-    #PCCs
-    base_lg=2.941944
-    base_lt=51.24306
+    #PCCs,
+    base_lg=2.939692#2.941944
+    base_lt=51.239737#51.24306
     push!(pcc0,base_lg)
     push!(pcc0,base_lt)
     push!(pcc,pcc0)#==#

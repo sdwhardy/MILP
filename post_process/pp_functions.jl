@@ -52,7 +52,8 @@ function ppf_printOcn(ocean)
 	for i in ocean.cnces
 		push!(x,i.coord.x)
 		push!(y,i.coord.y)
-		#println(i.num)
+		println(lof_pnt2pnt_dist(ocean.pccs[2].coord,i.coord))
+		println(lof_pnt2pnt_dist(ocean.pccs[1].coord,i.coord))
 	end
 	xb=Array{Float64,1}()
 	yb=Array{Float64,1}()
@@ -91,11 +92,14 @@ function ppf_printOcn(ocean)
 
 	p=plot(xoss,yoss,seriestype=:scatter,xticks = ylimin:5:ylimax,xlims=(ylimin,ylimax),yticks = ylimin:5:ylimax)
 	plot!(p,x,y,seriestype=:scatter,xticks = ylimin:5:ylimax,xlims=(ylimin,ylimax),yticks = ylimin:5:ylimax)
+	#p=plot(xoss,yoss,seriestype=:scatter)
+	#plot!(p,x,y,seriestype=:scatter)
+
 	#plot!(p,xb,yb,xticks = ylimin:5:ylimax,xlims=(ylimin,ylimax),yticks = ylimin:5:ylimax)
 
 	xd=Array{Float64,1}()
 	yd=Array{Float64,1}()
-	#=for i in ocean.gOarcs
+	for i in ocean.gOarcs
 		push!(xd,i.tail.coord.x)
 		push!(xd,i.head.coord.x)
 		push!(yd,i.tail.coord.y)
@@ -121,7 +125,7 @@ function ppf_printOcn(ocean)
 		plot!(p,xd,yd,xticks = ylimin:5:ylimax,xlims=(ylimin,ylimax),yticks = ylimin:5:ylimax,label="")
 		xd=[]
 		yd=[]
-	end=#
+	end#==#
 	for i in ocean.gParcs
 		push!(xd,i.tail.coord.x)
 		push!(xd,i.head.coord.x)
