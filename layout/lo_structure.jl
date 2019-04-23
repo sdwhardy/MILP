@@ -49,18 +49,18 @@ mutable struct cnce
       #area::Float64
       coord::xy
       mva::Float64
-      wnd::wind
+      wnd::Tuple
       trb::turb
       kv::Float64
       num::Int64
 end
 #cnce()=cnce(gps(),"colruyt",69.69,coord())
-cnce()=cnce(gps(),xy(),69.69,wind(),turb(),69.69,69)
+cnce()=cnce(gps(),xy(),69.69,(69.69,69.69),turb(),69.69,69)
 ###################################################################
 mutable struct oss
       coord::xy
       mvas::Array{Float64}
-      wnds::Array{wind}
+      wnds::Array{Tuple}
       num::Int64
 end
 oss()=oss(xy(),[],[],69)

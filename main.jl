@@ -22,6 +22,7 @@ using Distributions
 using StatsPlots
 using SpecialFunctions
 using Polynomials
+#using MAT
 ##################################################################
 #################### Cost of cable with no transformers #################
 function cbl_cost(l,S,kv,wp,o2o)
@@ -66,10 +67,10 @@ function main()
     S=200
     kv=33
 
-    mn=13
-    a=11.08
-    k=2.32
-    wp=wndF_wndPrf(mn,a,k)
+    #mn=13
+    ak=Array{Tuple,1}()
+    push!(ka,(2.32,11.08))#[(k,a)]
+    wp=wndF_wndPrf(ka)
     #wp=wndF_wndPrf()
 
     #o2o=false#PCC transformer/ compensation 50-50 offshore-onshore
@@ -88,4 +89,6 @@ end
 ########################################################################################
 #main()
 map=lof_layoutOcn()
+ppf_main2mfile(map)
+
 ppf_printOcn(map)#print ocean

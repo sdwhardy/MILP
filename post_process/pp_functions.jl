@@ -1,4 +1,207 @@
+##################################################################################################################
+################### parse to .m file ################################################################################
+##################################################################################################################
+function ppf_main2mfile(mp)
+	mf=ppf_dotMfile(mp.cnces[1].mva)
+	ppf_prntBuss(mf,mp)
+	ppf_prntGens(mf,mp)
+	ppf_prntBrns(mf,mp)
+	ppf_prntNeBrns(mf,mp)
+	close(mf)
+end
+########################################################
+function ppf_prntBuss(mf,mp)
+	println(mf, "%bus data")
+	println(mf, "%	bus_i	type	Pd	Qd	Gs	Bs	area	Vm	Va	baseKV	zone	Vmax	Vmin")
+	println(mf, "mpc.bus = [")
+	ppf_busNode(mf,mp.pccs)
+	ppf_busNode(mf,mp.cnces)
+	ppf_busNode(mf,mp.osss)
+	Binf=cnce()
+	Binf.num=mp.osss[length(mp.osss)].num+1
+	Binf.mva=length(mp.cnces)*lod_cnceMva()
+	ppf_busInf(mf,Binf)
+	println(mf, "];")
+	println(mf, "")
+end
+########################################################
+function ppf_prntGens(mf,mp)
+	println(mf, "%generator data")
+	println(mf, "%	bus	Pg	Qg	Qmax	Qmin	Vg	mbase	status	Pmax	Pmin")
+	println(mf, "mpc.gen = [")
+	ppf_genNode(mf,mp.cnces)
+	println(mf, "];")
+	println(mf, "")
+	println(mf, "%generator cost data")
+	println(mf, "mpc.gencost = [];")
+	println(mf, "")
+end
+########################################################
+function ppf_genNode(mf,nds)
+	for n in nds
+		print(mf,n.num,"\t")
+		print(mf,n.mva,"\t")
+		print(mf,0.0,"\t")
+		print(mf,0.0,"\t")
+		print(mf,0.0,"\t")
+		print(mf,1.1,"\t")
+		print(mf,n.mva,"\t")
+		print(mf,1.0,"\t")
+		print(mf,n.mva,"\t")
+		print(mf,0.0,"\t")
+		println(mf,";")
+	end
+end
+########################################################
+function ppf_busInf(mf,n)
+	print(mf,n.num,"\t")
+	print(mf,1.0,"\t")
+	print(mf,n.mva,"\t")
+	print(mf,0.0,"\t")
+	print(mf,0.0,"\t")
+	print(mf,1.0,"\t")
+	print(mf,1.0,"\t")
+	print(mf,1.0,"\t")
+	print(mf,1.05,"\t")
+	print(mf,lod_pccKv(),"\t")
+	print(mf,1.0,"\t")
+	print(mf,1.1,"\t")
+	print(mf,0.9)
+	println(mf,";")
+end
+########################################################
+function ppf_busNode(mf,nds)
+	if typeof(nds[1]) == typeof(cnce())
+		tp=3.0
+	elseif typeof(nds[1]) == typeof(pcc())
+		tp=1.0
+	elseif typeof(nds[1]) == typeof(oss())
+		tp=1.0
+	else
+		println("No type match for node!")
+	end
+	for n in nds
+		print(mf,n.num,"\t")
+		print(mf,tp,"\t")
+		print(mf,0.0,"\t")
+		print(mf,0.0,"\t")
+		print(mf,0.0,"\t")
+		print(mf,1.0,"\t")
+		print(mf,1.0,"\t")
+		print(mf,1.0,"\t")
+		print(mf,1.05,"\t")
+		print(mf,lod_pccKv(),"\t")
+		print(mf,1.0,"\t")
+		print(mf,1.1,"\t")
+		print(mf,0.9)
+		println(mf,";")
+		if typeof(nds[1]) == typeof(cnce())
+			tp=2.0
+		else
+		end
+	end
+end
+########################################################
+function ppf_prntBrn(mf,a,cb)
+	print(mf,a.tail.num,"\t")
+	print(mf,a.head.num,"\t")
+	print(mf,cb.ohm,"\t")
+	print(mf,cb.xl,"\t")
+	print(mf,cb.yc,"\t")
+	print(mf,cb.mva*cb.num,"\t")
+	print(mf,cb.mva*cb.num,"\t")
+	print(mf,cb.mva*cb.num,"\t")
+	print(mf,0.0,"\t")
+	print(mf,0.0,"\t")
+	print(mf,1.0,"\t")
+	print(mf,-30.0,"\t")
+	print(mf,30.0,"\t")
+end
+########################################################
+function ppf_ooBrn(mf,as)
+
+	for a in as
+		wp=wndF_wndPrf([a.head.wnds[1]])
+		cb=cstF_cbl_ttl(a.lngth,a.head.mvas[1]/2,lod_ossKv(),wp,false)
+		cb.ohm=((cb.ohm*a.lngth)/cb.num)/eqpD_pu()[4]
+		cb.xl=((cb.xl*a.lngth)/cb.num)/eqpD_pu()[4]
+		cb.yc=cb.yc*a.lngth*cb.num*eqpD_pu()[4]
+		ppf_prntBrn(mf,a,cb)
+		print(mf,cb.results.ttl+2*cstD_cfs().FC_ac)
+		println(mf,";")
+
+		#=cb=cstF_cbl_ttl(a.lngth,a.head.mvas[1]/3,lod_ossKv(),wp,false)
+		cb.ohm=((cb.ohm*a.lngth)/cb.num)/eqpD_pu()[4]
+		cb.xl=((cb.xl*a.lngth)/cb.num)/eqpD_pu()[4]
+		cb.yc=cb.yc*a.lngth*cb.num*eqpD_pu()[4]
+		ppf_prntBrn(mf,a,cb)
+		print(mf,cb.results.ttl+2*cstD_cfs().FC_ac)
+		println(mf,";")=#
+
+		mva=0.0
+		ka=Array{Tuple,1}()
+		for j=1:length(a.head.mvas)
+			mva=mva+a.head.mvas[j]
+			push!(ka,a.head.wnds[j])
+			wp=wndF_wndPrf(ka)
+			cb=cstF_cbl_ttl(a.lngth,mva,lod_ossKv(),wp,false)
+		    cb.ohm=((cb.ohm*a.lngth)/cb.num)/eqpD_pu()[4]
+		    cb.xl=((cb.xl*a.lngth)/cb.num)/eqpD_pu()[4]
+		    cb.yc=cb.yc*a.lngth*cb.num*eqpD_pu()[4]
+			ppf_prntBrn(mf,a,cb)
+			print(mf,cb.results.ttl+2*cstD_cfs().FC_ac)
+			println(mf,";")
+		end
+		ka=[]
+	end
+end
+########################################################
+function ppf_prntBrns(mf,mp)
+	println(mf, "%branch data")
+	println(mf, "%	fbus	tbus	r	x	b	rateA	rateB	rateC	ratio	angle	status	angmin	angmax")
+	println(mf, "mpc.branch = [")
+	println(mf, "];")
+	println(mf, "")
+end
+########################################################
+function ppf_prntNeBrns(mf,mp)
+	println(mf, "%candidate branch data")
+	println(mf, "%column_names%	f_bus	t_bus	br_r	br_x	br_b	rate_a	rate_b	rate_c	tap	shift	br_status	angmin	angmax	construction_cost")
+	println(mf, "mpc.ne_branch = [")
+	#ppf_goBrn(mf,mp.gOarcs)
+	ppf_ooBrn(mf,mp.oOarcs)
+	#ppf_opBrn(mf,mp.oParcs)
+	#ppf_gpBrn(mf,mp.gParcs)
+	println(mf, "];")
+end
+########################################################
+function ppf_dotMfile(S_pu)
+	fileName="results/owpp_tnep_map.m"
+	mfile = open(fileName,"w")
+	ppf_cblTtle2m(mfile,S_pu)
+    return mfile
+end
+########################################################
+function ppf_addGens()
+
+end
 #########################################################
+function ppf_cblTtle2m(mf,S_pu)
+	# Print headers
+	println(mf, "%TNEP optimizor input file test")
+	println(mf, "")
+	println(mf, "function mpc = owpp_tnep_map")
+	println(mf, "mpc.version = '2';")
+	print(mf, "mpc.baseMVA = ", "\t")
+	print(mf, S_pu)
+	println(mf, ";")
+	println(mf, "")
+end
+#########################################################
+
+##################################################################################################################
+################### printing ################################################################################
+##################################################################################################################
 function ppf_cblFileName(S_min,S_max,l,kv)
 	fileName="results/ACCBL"*string(trunc(Int,kv))*"kv"*string(trunc(Int,S_min))*"to"*string(trunc(Int,S_max))*"mw"*string(trunc(Int,l))*"km.csv"
 	csvfile = open(fileName,"w")

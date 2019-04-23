@@ -5,12 +5,12 @@ function wndF_wndPrf()
 end
 #################################################################################
 #
-function wndF_wndPrf(mn, a, k)
+function wndF_wndPrf(ka)
     wnd=wind()#creates wind object
     trb=turb()#creates turbine object
     #cut_off=trb.cout#change cuttoff speed here
     aque=100
-    dis=MixtureModel(Weibull,[(k,a)])#Generates a weibull distribution of shape factors a,k
+    dis=MixtureModel(Weibull,ka)#Generates a weibull distribution of shape factors a,k
     spds=[0:1/aque:trb.cout]#builds array of wind speeds within turbine range
     probs=sum(pdf.(dis, spds))/aque#maps the speeds to the wiebull distribution
     wndD_TrqCrv(trb)#calculates the output power of the turbine based on wind distribution

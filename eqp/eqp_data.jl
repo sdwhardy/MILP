@@ -3,9 +3,10 @@ This file contains the input data for equipment used
 =#
 ########################################################
 #sets PU values
+#should be moved into functions
 function eqpD_pu()
-    va=1000.0*10^6
-    v=132.0*10^3
+    va=lod_cnceMva()*10^6
+    v=lod_pccKv()*10^3
     i=(va)/(sqrt(3)*v)
     z=v^2/va
     y=1/z

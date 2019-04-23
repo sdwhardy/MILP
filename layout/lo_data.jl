@@ -121,24 +121,34 @@ function lod_pccKv()
     return 220.0
 end
 ################################################################################
+#set oss transmission voltage
+function lod_ossKv()
+    return 220.0
+end
+################################################################################
+function lod_cnceMva()
+    return 500.0
+end
+################################################################################
 #sets the power level of each concession
 function lod_cncesMva(nc)
     mva=Array{Float64,1}()
     for i=1:nc
-        push!(mva,500.0)
+        push!(mva,lod_cnceMva())
     end
     return mva
 end
 ################################################################################
 #sets wind of each concession
 function lod_cncesWnd(nc)
-    wnd=Array{wind,1}()
-    mn=13
+    wnd=Array{Tuple,1}()
+    #include special functions for gamma
+    #=mn=13
+    a=mn/gamma(1.5)=#
     a=11.08
     k=2.32
     for i=1:nc
-        wp=wndF_wndPrf(mn,a,k)
-        push!(wnd,wp)
+        push!(wnd,(k,a))
     end
     return wnd
 end
