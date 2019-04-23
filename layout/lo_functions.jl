@@ -363,13 +363,17 @@ function lof_ossLine(xy,num,rg,osss)
     end
     #add oss to the east of generation
     if (xy.x != elx && lod_eosss()==true)
-        x=min(xy.x+2*spc, elx)
-        osub=oss()
-        osub.coord.x=deepcopy(x)
-        osub.coord.y=deepcopy(xy.y)
-        osub.num=num
-        push!(osss,osub)
-        num=num+1
+        i=1
+        while (xy.x+i*spc <= elx)
+            x=min(xy.x+(i+1)*spc, elx)
+            osub=oss()
+            osub.coord.x=deepcopy(x)
+            osub.coord.y=deepcopy(xy.y)
+            osub.num=num
+            push!(osss,osub)
+            num=num+1
+            i=i+1
+        end
     else
     end
 
@@ -407,13 +411,17 @@ function lof_ossLine(xy,num,rg,osss)
     end
     #add oss to the west of generation
     if (xy.x != wlx && lod_wosss()==true)
-        x=max(xy.x-2*spc, wlx)
-        osub=oss()
-        osub.coord.x=deepcopy(x)
-        osub.coord.y=deepcopy(xy.y)
-        osub.num=num
-        push!(osss,osub)
-        num=num+1
+        i=1
+        while (xy.x-i*spc >= wlx)
+            x=max(xy.x-(i+1)*spc, wlx)
+            osub=oss()
+            osub.coord.x=deepcopy(x)
+            osub.coord.y=deepcopy(xy.y)
+            osub.num=num
+            push!(osss,osub)
+            num=num+1
+            i=i+1
+        end
     else
     end
     return num

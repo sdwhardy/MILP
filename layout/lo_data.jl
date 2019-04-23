@@ -3,12 +3,12 @@
 ###############################################################################
 #place OSS north of generation?
 function lod_noss()
-    return false
+    return true
 end
 ###############################################################################
 #place OSS south of generation?
 function lod_soss()
-    return false
+    return true
 end
 ###############################################################################
 #place OSS swest of generation?
@@ -28,7 +28,7 @@ end
 ###############################################################################
 #extend OSS to the east of generation?
 function lod_eosss()
-    return false
+    return true
 end
 ###############################################################################
 #extend OSS to the west of generation?
@@ -51,7 +51,7 @@ end
 #set maximum distance to connect the gens to oss with MV cable
 function lod_mxMvKm(cn)
     if cn.kv == 33.0
-        km=5
+        km=10
     elseif cn.kv==66.0
         km=20
     else
@@ -62,7 +62,7 @@ end
 ###############################################################################
 #set min oss to oss arc length
 function lod_mnKm()
-    return 15.0
+    return 5.0
 end
 ################################################################################
 #set minimum distance between any neighbouring OSS
@@ -175,7 +175,7 @@ function lod_cncesGps()
     push!(c2,51.59)
     push!(c,c2)
     #Northwind
-    push!(c3,2.900972)
+    #=push!(c3,2.900972)
     push!(c3,51.61897)
     push!(c,c3)
     #Seastar
@@ -193,7 +193,7 @@ function lod_cncesGps()
     #Mermaid
     push!(c7,2.74)
     push!(c7,51.71997)
-    push!(c,c7)#==#
+    push!(c,c7)=#
     return c
 end
 ################################################################################
