@@ -70,6 +70,11 @@ function lod_mnDist()
     return 2
 end
 ################################################################################
+#sets max distance away from pcc to connect gen to oss
+function lod_gen2Noss()
+    return 0
+end
+################################################################################
 #sets offset of sourounding OSS from center generator
 function lod_genSpc()
     return 2.5

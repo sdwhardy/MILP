@@ -22,7 +22,8 @@ function lof_layoutOcn()
     lof_OoArcs(ocean)#add all oss to oss arcs within boundary
     #println(length(ocean.gOarcs)+length(ocean.oOarcs)+length(ocean.oParcs))
     #println(length(ocean.cnces)+length(ocean.osss)+length(ocean.pccs))
-    ppf_printOcn(ocean)#print ocean
+    #ppf_printOcn(ocean)#print ocean
+    return ocean
 end
 ################################################################################
 
@@ -536,13 +537,32 @@ function lof_OpArcs(ocn)
     end
 end
 ###############################################################################
+#average point of PCCs
+function lof_avePnt(vec)
+    XY=xy()
+    XY.x=0
+    XY.y=0
+    tot=0
+    for i in vec
+        XY.x=XY.x+i.coord.x
+        XY.y=XY.y+i.coord.y
+        tot=tot+1
+    end
+    XY.x=XY.x/tot
+    XY.y=XY.y/tot
+    return XY
+end
+###############################################################################
 #generator to OSS connection
 function lof_GoArcs(ocn)
+    avePcc=lof_avePnt(ocn.pccs)
+    nos=lod_gen2Noss()
     for i in ocn.cnces
         mxKm=lod_mxMvKm(i)
         for j in ocn.osss
             km=lof_pnt2pnt_dist(i.coord,j.coord)
-            if km <= mxKm
+            if (km <= mxKm && lof_pnt2pnt_dist(i.coord,avePcc)+nos >= lof_pnt2pnt_dist(j.coord,avePcc))
+            #if km <= mxKm
                 push!(ocn.gOarcs,lof_buldGoArc(i,j,km))
             else
             end

@@ -87,4 +87,5 @@ function main()
 end
 ########################################################################################
 #main()
-lof_layoutOcn()
+map=lof_layoutOcn()
+ppf_printOcn(map)#print ocean
