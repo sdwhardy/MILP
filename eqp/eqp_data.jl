@@ -75,7 +75,7 @@ end
 #Set maximum of cables possible in parallel
 function eqpD_MAXcbls(kv)
     if kv == 33 || kv == 66
-        pll=6
+        pll=12
     else
         pll=12
     end

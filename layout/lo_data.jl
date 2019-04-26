@@ -28,7 +28,7 @@ end
 ###############################################################################
 #extend OSS to the east of generation?
 function lod_eosss()
-    return true
+    return false
 end
 ###############################################################################
 #extend OSS to the west of generation?
@@ -40,7 +40,7 @@ end
 function lod_mxMv2PccKm(cn)
     if cn.kv == 33.0
         km=15
-    elseif cn.kv==66.0
+    elseif cn.kv == 66.0
         km=30
     else
         error("Cable MV does not match option!")
@@ -51,9 +51,9 @@ end
 #set maximum distance to connect the gens to oss with MV cable
 function lod_mxMvKm(cn)
     if cn.kv == 33.0
-        km=10
-    elseif cn.kv==66.0
-        km=20
+        km=15
+    elseif cn.kv == 66.0
+        km=30
     else
         error("Cable MV does not match option!")
     end
@@ -62,7 +62,7 @@ end
 ###############################################################################
 #set min oss to oss arc length
 function lod_mnKm()
-    return 5.0
+    return 2.0
 end
 ################################################################################
 #set minimum distance between any neighbouring OSS
@@ -70,9 +70,9 @@ function lod_mnDist()
     return 2
 end
 ################################################################################
-#sets max distance away from pcc to connect gen to oss
+#sets max distance away to connect gen to oss
 function lod_gen2Noss()
-    return 0
+    return 2
 end
 ################################################################################
 #sets offset of sourounding OSS from center generator
@@ -113,7 +113,7 @@ end
 ###############################################################################
 #set collector voltage
 function lod_cncsKv()
-    return 33.0
+    return 66.0
 end
 ################################################################################
 #set onshore transmission voltage
@@ -190,7 +190,7 @@ function lod_cncesGps()
     push!(c2,51.59)
     push!(c,c2)
     #Northwind
-    #=push!(c3,2.900972)
+    push!(c3,2.900972)
     push!(c3,51.61897)
     push!(c,c3)
     #Seastar
@@ -198,7 +198,7 @@ function lod_cncesGps()
     push!(c4,51.63)
     push!(c,c4)
     #Nobelwind/Belwind
-    push!(c5,(2.819972+2.799972)/2)
+    #=push!(c5,(2.819972+2.799972)/2)
     push!(c5,(51.664+51.67)/2)
     push!(c,c5)
     #Northwester
@@ -217,14 +217,17 @@ function lod_pccGps()
     pcc1=Array{Float64,1}()
     pcc=[]
     #PCCs,
-    base_lg=2.939692#2.941944
-    base_lt=51.239737#51.24306
-    push!(pcc0,base_lg)
-    push!(pcc0,base_lt)
-    push!(pcc,pcc0)#==#
+
+    #push!(pcc0,2.939692)
+    #push!(pcc0,51.239737)
+    #push!(pcc,pcc0)
     push!(pcc1,3.183611)
     push!(pcc1,51.32694)
     push!(pcc,pcc1)
+    base_lg=pcc[1][1]#2.941944
+    base_lt=pcc[1][2]#51.24306
+    println(base_lg)
+    println(base_lt)
     return pcc
 end
 ###############################################################################

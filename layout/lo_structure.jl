@@ -151,7 +151,12 @@ mutable struct domain
 end
 domain()=domain(lnbnd(),lnbnd(),lnbnd(),lnbnd())
 ###################################################################
-
+mutable struct lnks
+      hd::Union{Int,oss,pcc}
+      tl::Union{Int,cnce,oss}
+      elec::owpp
+end
+lnks()=lnks(69,69,owpp())
 ################################################################################
 ############################ Economic Zone #####################################
 ################################################################################
@@ -166,10 +171,10 @@ mutable struct eez
       bnd::domain
       #area::Float64
       pccs::Array{pcc}
-      #coord::coord
+      asBuilt::Array{lnks}
 end
 #eez()=eez(gps(),region(),69.69,[],coord())
-eez()=eez([],[],[],[],[],[],domain(),[])
+eez()=eez([],[],[],[],[],[],domain(),[],[])
 ###################################################################
 
 

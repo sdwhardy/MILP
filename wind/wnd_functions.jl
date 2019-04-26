@@ -5,9 +5,9 @@ function wndF_wndPrf()
 end
 #################################################################################
 #
-function wndF_wndPrf(ka)
+function wndF_wndPrf(ka,trb)
     wnd=wind()#creates wind object
-    trb=turb()#creates turbine object
+    #trb=t#creates turbine object
     #cut_off=trb.cout#change cuttoff speed here
     aque=100
     dis=MixtureModel(Weibull,ka)#Generates a weibull distribution of shape factors a,k

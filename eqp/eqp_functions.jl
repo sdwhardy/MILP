@@ -1,7 +1,13 @@
 #=
 This file contains functions that manipulate the equipment data
 =#
-
+########################################################
+#change impedance to PU values
+function eqpf_puImped(cb,l)
+    cb.ohm=((cb.ohm*l)/cb.num)/eqpD_pu()[4]
+    cb.xl=((cb.xl*l)/cb.num)/eqpD_pu()[4]
+    cb.yc=cb.yc*l*cb.num*eqpD_pu()[4]
+end
 ########################################################
 function eqpF_puChgBs(Sn,z)
     z=z*100*10^6/Sn

@@ -1,6 +1,6 @@
-##################################################################################################################
-################### parse to .m file ################################################################################
-##################################################################################################################
+################################################################################################################
+################################## Print to optimization .m file ###############################################
+################################################################################################################
 function ppf_main2mfile(mp)
 	mf=ppf_dotMfile(mp.cnces[1].mva)
 	ppf_prntBuss(mf,mp)
@@ -12,7 +12,7 @@ end
 ########################################################
 function ppf_prntBuss(mf,mp)
 	println(mf, "%bus data")
-	println(mf, "%	bus_i	type	Pd	Qd	Gs	Bs	area	Vm	Va	baseKV	zone	Vmax	Vmin")
+	println(mf, "%bus_i	type	Pd	Qd	Gs	Bs	area	Vm	Va	baseKV	zone	Vmax	Vmin")
 	println(mf, "mpc.bus = [")
 	ppf_busNode(mf,mp.pccs)
 	ppf_busNode(mf,mp.cnces)
@@ -27,28 +27,32 @@ end
 ########################################################
 function ppf_prntGens(mf,mp)
 	println(mf, "%generator data")
-	println(mf, "%	bus	Pg	Qg	Qmax	Qmin	Vg	mbase	status	Pmax	Pmin")
+	println(mf, "%bus	Pg	Qg	Qmax	Qmin	Vg	mbase	status	Pmax	Pmin")
 	println(mf, "mpc.gen = [")
 	ppf_genNode(mf,mp.cnces)
 	println(mf, "];")
 	println(mf, "")
 	println(mf, "%generator cost data")
-	println(mf, "mpc.gencost = [];")
+	println(mf, "mpc.gencost = [")
+	for i=1:length(mp.cnces)
+		println(mf, "2	 0.0	 0.0	 0	   0	   0	   0;")
+	end
+	println(mf, "];")
 	println(mf, "")
 end
 ########################################################
 function ppf_genNode(mf,nds)
 	for n in nds
 		print(mf,n.num,"\t")
-		print(mf,n.mva,"\t")
+		print(mf,trunc(Int,n.mva),"\t")
 		print(mf,0.0,"\t")
 		print(mf,0.0,"\t")
 		print(mf,0.0,"\t")
-		print(mf,1.1,"\t")
-		print(mf,n.mva,"\t")
 		print(mf,1.0,"\t")
-		print(mf,n.mva,"\t")
-		print(mf,0.0,"\t")
+		print(mf,trunc(Int,n.mva),"\t")
+		print(mf,1.0,"\t")
+		print(mf,trunc(Int,n.mva),"\t")
+		print(mf,0.0)
 		println(mf,";")
 	end
 end
@@ -56,7 +60,7 @@ end
 function ppf_busInf(mf,n)
 	print(mf,n.num,"\t")
 	print(mf,1.0,"\t")
-	print(mf,n.mva,"\t")
+	print(mf,trunc(Int,n.mva),"\t")
 	print(mf,0.0,"\t")
 	print(mf,0.0,"\t")
 	print(mf,1.0,"\t")
@@ -101,16 +105,198 @@ function ppf_busNode(mf,nds)
 		end
 	end
 end
+
+################################################################################################################
+################################ Arcs ##########################################################################
+################################################################################################################
+function ppf_prntNeBrns(mf,mp)
+	println(mf, "%candidate branch data")
+	println(mf, "%column_names%	f_bus	t_bus	br_r	br_x	br_b	rate_a	rate_b	rate_c	tap	shift	br_status	angmin	angmax	construction_cost")
+	println(mf, "mpc.ne_branch = [")
+	ppf_gpBrn(mf,mp.gParcs,mp.asBuilt)
+	ppf_goBrn(mf,mp.gOarcs,mp.asBuilt)
+	ppf_ooBrn(mf,mp.oOarcs,mp.asBuilt)
+	ppf_opBrn(mf,mp.oParcs,mp.asBuilt)
+	println(mf, "];")
+end
+################################################################################
+#converts transformer and cable values to PU then calls .m printing
+function ppf_xcXrlPu(a,arc,mf)
+	eqpf_puImped(arc.cable,a.lngth)
+	xxr=(arc.xfm.ohm/arc.xfm.num)/eqpD_pu()[4]
+	xxl=(arc.xfm.xl/arc.xfm.num)/eqpD_pu()[4]
+	ppf_prntBrn(mf,a,arc.cable,xxr,xxl)
+end
+################################################################################
+function ppf_asBuilt(a,abs,mva,arc,cst,km)
+	ab=lnks()
+	ab.hd=deepcopy(a.head)
+	ab.tl=deepcopy(a.tail)
+	#arc.mva=deepcopy(mva)
+	#arc.km=deepcopy(km)
+	#arc.costs.ttl=deepcopy(cst)
+	ab.elec=deepcopy(arc)
+	ab.elec.costs.ttl=cst
+	ab.elec.km=deepcopy(km)
+	ab.elec.mva=deepcopy(mva)
+	push!(abs,ab)
+end
+################################################################################
+function ppf_gpBrn(mf,as,abs)
+	mvas=Array{Float64,1}()
+	for a in as
+		#push!(mvas,a.tail.mva/3)
+		push!(mvas,a.tail.mva/2)
+		push!(mvas,a.tail.mva)
+		wp=wndF_wndPrf([a.tail.wnd],a.tail.trb)
+
+		for mva in mvas
+			arc=cstF_cblWT_ttl(a.lngth,mva,a.tail.kv,wp,false)
+		    eqpD_xfoXR(a.tail.kv,arc.xfm)
+			if arc.cable.num != 0
+				ppf_xcXrlPu(a,arc,mf)
+				cst=arc.costs.ttl+2*cstD_cfs().FC_ac
+				println(cst)
+				ppf_asBuilt(a,abs,mva,arc,cst,a.lngth)
+				print(mf,cst)
+				println(mf,";")
+			else
+				println("No suitable "*string(a.tail.kv)*"Kv, "*string(mva)*"MVA cable for "*string(trunc(Int,a.lngth))*"Km. -removing")
+			end
+		end
+		mvas=[]
+	end
+end
+################################################################################
+function ppf_goBrn(mf,as,abs)
+	mvas=Array{Float64,1}()
+	#println("length of cable: ")
+	#println(length(as))
+	for a in as
+		wp=wndF_wndPrf([a.tail.wnd],a.tail.trb)
+		#push!(mvas,a.tail.mva/3)
+		push!(mvas,a.tail.mva/2)
+		push!(mvas,a.tail.mva)
+		wp=wndF_wndPrf([a.tail.wnd],a.tail.trb)
+
+		for mva in mvas
+			arc=cstF_cblWT_ttl(a.lngth,mva,a.tail.kv,wp,true)
+		    eqpD_xfoXR(a.tail.kv,arc.xfm)
+			if arc.cable.num != 0
+				ppf_xcXrlPu(a,arc,mf)
+				cst=arc.costs.ttl+(-1*cstD_cfs().FC_ac)
+				ppf_asBuilt(a,abs,mva,arc,cst,a.lngth)
+				print(mf,cst)
+				println(mf,";")
+			else
+				println("No suitable "*string(a.tail.kv)*"Kv, "*string(mva)*"MVA cable for "*string(trunc(Int,a.lngth))*"Km. -removing")
+			end
+		end
+		mvas=[]
+	end
+end
+################################################################################
+function ppf_ooBrn(mf,as,abs)
+#TODO: turb() should be updated to carry concession turbines
+	mvas=Array{Float64,1}()
+	arc=owpp()
+	for a in as
+		wp=wndF_wndPrf([a.tail.wnds[1]],turb())
+		#push!(mvas,a.tail.mvas[1]/3))
+		push!(mvas,a.tail.mvas[1]/2)
+		for mva in mvas
+			cb=cstF_cbl_ttl(a.lngth,mva,lod_ossKv(),wp,true)
+			if cb.num != 0
+				eqpf_puImped(cb,a.lngth)
+				ppf_prntBrn(mf,a,cb,0.0,0.0)
+				arc.cable=cb
+				cst=cb.results.ttl+2*cstD_cfs().FC_ac
+				ppf_asBuilt(a,abs,mva,arc,cst,a.lngth)
+				print(mf,cst)
+				println(mf,";")
+			else
+				println("No suitable "*string(a.tail.kv)*"Kv, "*string(mva)*"MVA cable for "*string(trunc(Int,a.lngth))*"Km. -removing")
+			end
+		end
+		mvas=[]
+		mva=0.0
+		ka=Array{Tuple,1}()
+		for j=1:length(a.tail.mvas)
+			mva=mva+a.tail.mvas[j]
+			push!(ka,a.tail.wnds[j])
+			wp=wndF_wndPrf(ka,turb())
+			#println(a.lngth)
+			cb=cstF_cbl_ttl(a.lngth,mva,lod_ossKv(),wp,true)
+			if cb.num != 0
+			    eqpf_puImped(cb,a.lngth)
+				ppf_prntBrn(mf,a,cb,0.0,0.0)
+				arc.cable=cb
+				cst=cb.results.ttl+2*cstD_cfs().FC_ac
+				ppf_asBuilt(a,abs,mva,arc,cst,a.lngth)
+				print(mf,cst)
+				println(mf,";")
+			else
+				println("No suitable "*string(lod_ossKv())*"Kv, "*string(mva)*"MVA cable for "*string(trunc(Int,a.lngth))*"Km. -removing")
+			end
+		end
+		ka=[]
+	end
+end
+################################################################################
+function ppf_opBrn(mf,as,abs)
+	#TODO: turb() should be updated to carry concession turbines
+		mvas=Array{Float64,1}()
+		for a in as
+			#println(a)
+			wp=wndF_wndPrf([a.tail.wnds[1]],turb())
+			#push!(mvas,a.tail.mvas[1]/3))
+			push!(mvas,a.tail.mvas[1]/2)
+			for mva in mvas
+				arc=cstF_cblWT_ttl(a.lngth,mva,lod_ossKv(),wp,false)
+				eqpD_xfoXR(lod_ossKv(),arc.xfm)
+				if arc.cable.num != 0
+					ppf_xcXrlPu(a,arc,mf)
+					cst=arc.costs.ttl+cstD_cfs().FC_ac
+					ppf_asBuilt(a,abs,mva,arc,cst,a.lngth)
+					print(mf,cst)
+					println(mf,";")
+				else
+					println("No suitable "*string(lod_ossKv())*"Kv, "*string(mva)*"MVA cable for "*string(trunc(Int,a.lngth))*"Km. -removing")
+				end
+			end
+			mvas=[]
+			mva=0.0
+			ka=Array{Tuple,1}()
+			for j=1:length(a.tail.mvas)
+				mva=mva+a.tail.mvas[j]
+				push!(ka,a.tail.wnds[j])
+				wp=wndF_wndPrf(ka,turb())
+				#println(a.lngth)
+				arc=cstF_cblWT_ttl(a.lngth,mva,lod_ossKv(),wp,false)
+				eqpD_xfoXR(lod_ossKv(),arc.xfm)
+				if arc.cable.num != 0
+				    ppf_xcXrlPu(a,arc,mf)
+					cst=arc.costs.ttl+cstD_cfs().FC_ac
+					ppf_asBuilt(a,abs,mva,arc,cst,a.lngth)
+					print(mf,cst)
+					println(mf,";")
+				else
+					println("No suitable "*string(lod_ossKv())*"Kv, "*string(mva)*"MVA cable for "*string(trunc(Int,a.lngth))*"Km. -removing")
+				end
+			end
+			ka=[]
+		end
+	end
 ########################################################
-function ppf_prntBrn(mf,a,cb)
+function ppf_prntBrn(mf,a,cb,xr,xxl)
 	print(mf,a.tail.num,"\t")
 	print(mf,a.head.num,"\t")
-	print(mf,cb.ohm,"\t")
-	print(mf,cb.xl,"\t")
+	print(mf,cb.ohm+xr,"\t")
+	print(mf,cb.xl+xxl,"\t")
 	print(mf,cb.yc,"\t")
-	print(mf,cb.mva*cb.num,"\t")
-	print(mf,cb.mva*cb.num,"\t")
-	print(mf,cb.mva*cb.num,"\t")
+	print(mf,trunc(Int,cb.mva*cb.num),"\t")
+	print(mf,trunc(Int,cb.mva*cb.num),"\t")
+	print(mf,trunc(Int,cb.mva*cb.num),"\t")
 	print(mf,0.0,"\t")
 	print(mf,0.0,"\t")
 	print(mf,1.0,"\t")
@@ -118,81 +304,55 @@ function ppf_prntBrn(mf,a,cb)
 	print(mf,30.0,"\t")
 end
 ########################################################
-function ppf_ooBrn(mf,as)
-
-	for a in as
-		wp=wndF_wndPrf([a.head.wnds[1]])
-		cb=cstF_cbl_ttl(a.lngth,a.head.mvas[1]/2,lod_ossKv(),wp,false)
-		cb.ohm=((cb.ohm*a.lngth)/cb.num)/eqpD_pu()[4]
-		cb.xl=((cb.xl*a.lngth)/cb.num)/eqpD_pu()[4]
-		cb.yc=cb.yc*a.lngth*cb.num*eqpD_pu()[4]
-		ppf_prntBrn(mf,a,cb)
-		print(mf,cb.results.ttl+2*cstD_cfs().FC_ac)
-		println(mf,";")
-
-		#=cb=cstF_cbl_ttl(a.lngth,a.head.mvas[1]/3,lod_ossKv(),wp,false)
-		cb.ohm=((cb.ohm*a.lngth)/cb.num)/eqpD_pu()[4]
-		cb.xl=((cb.xl*a.lngth)/cb.num)/eqpD_pu()[4]
-		cb.yc=cb.yc*a.lngth*cb.num*eqpD_pu()[4]
-		ppf_prntBrn(mf,a,cb)
-		print(mf,cb.results.ttl+2*cstD_cfs().FC_ac)
-		println(mf,";")=#
-
-		mva=0.0
-		ka=Array{Tuple,1}()
-		for j=1:length(a.head.mvas)
-			mva=mva+a.head.mvas[j]
-			push!(ka,a.head.wnds[j])
-			wp=wndF_wndPrf(ka)
-			cb=cstF_cbl_ttl(a.lngth,mva,lod_ossKv(),wp,false)
-		    cb.ohm=((cb.ohm*a.lngth)/cb.num)/eqpD_pu()[4]
-		    cb.xl=((cb.xl*a.lngth)/cb.num)/eqpD_pu()[4]
-		    cb.yc=cb.yc*a.lngth*cb.num*eqpD_pu()[4]
-			ppf_prntBrn(mf,a,cb)
-			print(mf,cb.results.ttl+2*cstD_cfs().FC_ac)
-			println(mf,";")
-		end
-		ka=[]
-	end
+function ppf_prntBrnOnShre(mf,fn,tn,p)
+	print(mf,fn,"\t")
+	print(mf,tn,"\t")
+	print(mf,0.0093,"\t")
+	print(mf,0.0222,"\t")
+	print(mf,0.2217,"\t")
+	print(mf,p,"\t")
+	print(mf,p,"\t")
+	print(mf,p,"\t")
+	print(mf,0.0,"\t")
+	print(mf,0.0,"\t")
+	print(mf,1.0,"\t")
+	print(mf,-30.0,"\t")
+	print(mf,30.0)
+	println(mf,";")
 end
 ########################################################
 function ppf_prntBrns(mf,mp)
 	println(mf, "%branch data")
-	println(mf, "%	fbus	tbus	r	x	b	rateA	rateB	rateC	ratio	angle	status	angmin	angmax")
+	println(mf, "%fbus	tbus	r	x	b	rateA	rateB	rateC	ratio	angle	status	angmin	angmax")
 	println(mf, "mpc.branch = [")
+	mva=0.0
+	tn=length(mp.pccs)+length(mp.cnces)+length(mp.osss)+1
+	for i in mp.cnces
+		mva=mva+i.mva
+	end
+	for i in mp.pccs
+		ppf_prntBrnOnShre(mf,i.num,tn,mva)
+	end
 	println(mf, "];")
 	println(mf, "")
 end
-########################################################
-function ppf_prntNeBrns(mf,mp)
-	println(mf, "%candidate branch data")
-	println(mf, "%column_names%	f_bus	t_bus	br_r	br_x	br_b	rate_a	rate_b	rate_c	tap	shift	br_status	angmin	angmax	construction_cost")
-	println(mf, "mpc.ne_branch = [")
-	#ppf_goBrn(mf,mp.gOarcs)
-	ppf_ooBrn(mf,mp.oOarcs)
-	#ppf_opBrn(mf,mp.oParcs)
-	#ppf_gpBrn(mf,mp.gParcs)
-	println(mf, "];")
-end
-########################################################
+################################################################################################################
+################################ Nodes #########################################################################
+################################################################################################################
 function ppf_dotMfile(S_pu)
-	fileName="results/owpp_tnep_map.m"
+	fileName="results/owpp_tnep_map.mat"
 	mfile = open(fileName,"w")
 	ppf_cblTtle2m(mfile,S_pu)
     return mfile
 end
 ########################################################
-function ppf_addGens()
-
-end
-#########################################################
 function ppf_cblTtle2m(mf,S_pu)
 	# Print headers
 	println(mf, "%TNEP optimizor input file test")
 	println(mf, "")
 	println(mf, "function mpc = owpp_tnep_map")
 	println(mf, "mpc.version = '2';")
-	print(mf, "mpc.baseMVA = ", "\t")
+	print(mf, "mpc.baseMVA = ")
 	print(mf, S_pu)
 	println(mf, ";")
 	println(mf, "")
@@ -200,7 +360,7 @@ end
 #########################################################
 
 ##################################################################################################################
-################### printing ################################################################################
+######################## printing ################################################################################
 ##################################################################################################################
 function ppf_cblFileName(S_min,S_max,l,kv)
 	fileName="results/ACCBL"*string(trunc(Int,kv))*"kv"*string(trunc(Int,S_min))*"to"*string(trunc(Int,S_max))*"mw"*string(trunc(Int,l))*"km.csv"
@@ -278,11 +438,13 @@ function ppf_printOcn(ocean)
 		push!(xb,i.x)
 		push!(yb,i.y)
 	end
+	anoss=Array{Int64,1}()
 	xoss=Array{Float64,1}()
 	yoss=Array{Float64,1}()
 	for i in ocean.osss
 		push!(xoss,i.coord.x)
 		push!(yoss,i.coord.y)
+		push!(anoss,i.num)
 		#println(i.coord)
 	end
 	#println(lof_pnt2pnt_dist(ocean.osss[2].coord,ocean.osss[3].coord))
@@ -311,7 +473,7 @@ function ppf_printOcn(ocean)
 		xd=[]
 		yd=[]
 	end
-	#=for i in ocean.oParcs
+	for i in ocean.oParcs
 		push!(xd,i.tail.coord.x)
 		push!(xd,i.head.coord.x)
 		push!(yd,i.tail.coord.y)
@@ -337,7 +499,7 @@ function ppf_printOcn(ocean)
 		plot!(p,xd,yd,xticks = ylimin:5:ylimax,xlims=(ylimin,ylimax),yticks = ylimin:5:ylimax,label="")
 		xd=[]
 		yd=[]
-	end=#
+	end
 	p
 	end
 ################################################################################

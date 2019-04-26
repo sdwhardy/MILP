@@ -33,6 +33,10 @@ end
 #returns the hypotenuse distance between 2 points
 function lof_pnt2pnt_dist(pnt1,pnt2)
     hyp=sqrt((pnt2.x-pnt1.x)^2+(pnt2.y-pnt1.y)^2)
+    if hyp < 1
+        hyp=1
+        println("Length less than 1km set to 1km.")
+    end
     return hyp
 end
 ################################################################################
@@ -256,7 +260,7 @@ function lof_ewbnd(ocn)
     Wbnd=Array{xy,1}()
     Ebnd=Array{xy,1}()
 
-    strt=ocn.pccs[2].coord#define 0 point
+    strt=ocn.pccs[length(ocn.pccs)].coord#define 0 point
     fnsh=ocn.cnces[length(ocn.cnces)].coord#define furthest concession
     push!(Wbnd,deepcopy(strt))
     push!(Ebnd,deepcopy(strt))
@@ -457,6 +461,24 @@ function lof_ossSprcfy(osss)
     end
 end
 ###############################################################################
+function lof_wndPfOss(osss,ocn)
+    avePcc=lof_avePnt(ocn.pccs)
+    nos=lod_gen2Noss()
+    for i in osss
+        for j in ocn.cnces
+            for k in ocn.pccs
+                if (lof_pnt2pnt_dist(i.coord,k.coord) <= lof_pnt2pnt_dist(j.coord,k.coord)+nos)
+                    push!(i.wnds,j.wnd)
+                    push!(i.mvas,j.mva)
+                    @goto wnd_stored
+                else
+                end
+            end
+            @label wnd_stored
+        end
+    end
+end
+###############################################################################
 function lof_osss(ocn)
 
     num=length(ocn.pccs)+length(ocn.cnces)+1
@@ -474,6 +496,7 @@ function lof_osss(ocn)
         lof_ossSprcfy(osss)
         nl=deepcopy(length(osss))
     end
+    lof_wndPfOss(osss,ocn)
     ocn.osss=deepcopy(osss)
 end
 ###############################################################################
@@ -482,8 +505,8 @@ end
 ########################################### arcs ##########################################################
 ###########################################################################################################
 function lof_buldGoArc(tl,hd,km)
-    push!(hd.wnds,tl.wnd)
-    push!(hd.mvas,tl.mva)
+    #push!(hd.wnds,tl.wnd)
+    #push!(hd.mvas,tl.mva)
     a=gOarc()
     a.head=hd
     a.tail=tl

@@ -1,3 +1,15 @@
+using Distributions
+using StatsPlots
+using SpecialFunctions
+using Polynomials
+
+#MILP
+using PowerModels
+using Cbc
+using Ipopt
+using Juniper
+using Pavito
+using Mosek
 #Includes all dependancies
 #All data structures
 include("cost/cst_structure.jl")#cost
@@ -17,18 +29,20 @@ include("wind/wnd_functions.jl")#wind profile
 include("eens/eens_functions.jl")#EENS calc
 include("post_process/pp_functions.jl")#Post processing
 include("layout/lo_functions.jl")#layout
+include("TNEP/tnep_milp.jl")#milp
+include("TNEP/tnep_post_process.jl")#Post processing milp
 
-using Distributions
-using StatsPlots
-using SpecialFunctions
-using Polynomials
-#using MAT
+
+using MAT
 ##################################################################
 #################### Cost of cable with no transformers #################
 function cbl_cost(l,S,kv,wp,o2o)
-    cb=cstF_cbl_ttl(l,S,kv,wp,o2o)
+    arc=cstF_cbl_ttl(l,S,kv,wp,o2o)
+    arc.ohm=((arc.ohm*l)/arc.num)/eqpD_pu()[4]
+    arc.xl=((arc.xl*l)/arc.num)/eqpD_pu()[4]
+    arc.yc=arc.yc*l*arc.num*eqpD_pu()[4]
     print("Cable: ")
-    println(cb.results.ttl)
+    println(arc)
 end
 
 #################### Cost of transformer with no cables #################
@@ -46,9 +60,8 @@ function xfmr_cbl_cost(l,S,kv,wp,o2o)
     arc.cable.xl=((arc.cable.xl*l)/arc.cable.num)/eqpD_pu()[4]
     arc.cable.yc=arc.cable.yc*l*arc.cable.num*eqpD_pu()[4]
     print("Xfm/Cbl: ")
-    println(arc.costs.ttl)
+    println(arc)
     println()
-    println(arc.cable)
 end
 ###################### linearization of cost ########################
 function lcbl_cost(l,kv,wp,o2o)
@@ -63,26 +76,26 @@ end
 ##################################################################
 #A main function is used to encasulate code as outa function is global scope and should be avoided
 function main()
-    l=1
-    S=200
-    kv=33
+    l=5.004182064171611
+    S=1000
+    kv=220
 
     #mn=13
-    ak=Array{Tuple,1}()
+    ka=Array{Tuple,1}()
     push!(ka,(2.32,11.08))#[(k,a)]
-    wp=wndF_wndPrf(ka)
+    wp=wndF_wndPrf(ka,turb())
     #wp=wndF_wndPrf()
 
     #o2o=false#PCC transformer/ compensation 50-50 offshore-onshore
-    o2o=true#OSS transformer/ compensation all offshore
-    cbl_cost(l,S,kv,wp,o2o)
+    o2o=false#OSS transformer/ compensation all offshore
+    #cbl_cost(l,S,kv,wp,o2o)
     #xfmr_cost(S,wp,o2o)
 
     #for S=500:1:1500
     xfmr_cbl_cost(l,S,kv,wp,o2o)
     #end
-    plotly()
-    plot(wp.pu,wp.ce)
+    #plotly()
+    #plot(wp.pu,wp.ce)
 
     #lcbl_cost(l,kv,wp,o2o)#cstF_linearize_cbl
 end
@@ -90,5 +103,7 @@ end
 #main()
 map=lof_layoutOcn()
 ppf_main2mfile(map)
-
-ppf_printOcn(map)#print ocean
+fmap,raw,nt=tnep_milp(map)
+#ppf_printOcn(map)#print ocean
+tpp_prnt2Scrn(raw,nt)
+ppf_printOcn(fmap)#print ocean
