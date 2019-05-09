@@ -1,47 +1,77 @@
 ###############################################################################
 ####################### Problem size adjustments ##############################
 ###############################################################################
-#place OSS north of generation?
-function lod_noss()
-    return true
-end
+########################### control booleans ##################################
 ###############################################################################
-#place OSS south of generation?
-function lod_soss()
-    return true
-end
-###############################################################################
-#place OSS swest of generation?
-function lod_woss()
-    return true
-end
-###############################################################################
-#place OSS east of generation?
-function lod_eoss()
-    return true
-end
-###############################################################################
-#place OSS on generation?
-function lod_goss()
-    return true
-end
-###############################################################################
-#extend OSS to the east of generation?
-function lod_eosss()
+#place oss in radius on route to neighbouring oss
+function lod_xrad10()
     return false
 end
 ###############################################################################
-#extend OSS to the west of generation?
-function lod_wosss()
+#place oss in middle between neighbouring oss
+function lod_oss1neib10()
     return true
 end
 ###############################################################################
+#place 2nd and 3rd oss between neighbouring oss
+function lod_oss3neibs10()
+    return false
+end
+###############################################################################
+#place oss in near radius of oss towards pcc
+function lod_ossXradPcc10()
+    return false
+end
+###############################################################################
+#place oss half way (adjustable with  lod_frcNum()) to pcc from owpp
+function lod_ossXradPccHalf10()
+    return false
+end
+###############################################################################
+# set if close osss should be combined
+function lod_ossSpcfy()
+    return false
+end
+###############################################################################
+########################## distance adjustments ###############################
+###############################################################################
+#fraction of distance to place oss on lod_frcNum() of furthest owpp (mid point compensation)
+function lod_rdFrc()
+    return 0.5
+end
+###############################################################################
+#furthest # of owpp to add lod_rdFrc() point oss (midpoint compensation)
+function lod_frcNum()
+    return 1
+end
+###############################################################################
+#distance from owpp to place nearest oss on path to neighbouring owpp
+function lod_rad()
+    return 1
+end
+###############################################################################
+#the number of neighbours to place closest oss between (those on radius)
+function lod_xXneibs()
+    return 1
+end
+###############################################################################
+#the number of closest neighbours to place 1 oss at centre point
+function lod_x1neibs()
+    return 1
+end
+###############################################################################
+#place 2 and 3 in middle of x number of neighbouring owpp
+function lod_x3neibs()
+    return 1
+end
+###############################################################################
 #set maximum distance to connect the gens to pccs with MV cable
+#values are set compared to 220kV grid
 function lod_mxMv2PccKm(cn)
     if cn.kv == 33.0
-        km=15
+        km=10
     elseif cn.kv == 66.0
-        km=30
+        km=25
     else
         error("Cable MV does not match option!")
     end
@@ -49,11 +79,12 @@ function lod_mxMv2PccKm(cn)
 end
 ###############################################################################
 #set maximum distance to connect the gens to oss with MV cable
+#values are set compared to 220kV grid
 function lod_mxMvKm(cn)
     if cn.kv == 33.0
-        km=15
+        km=3
     elseif cn.kv == 66.0
-        km=30
+        km=7
     else
         error("Cable MV does not match option!")
     end
@@ -65,20 +96,20 @@ function lod_mnKm()
     return 2.0
 end
 ################################################################################
-#set minimum distance between any neighbouring OSS
+#set minimum distance between any neighbouring OSS (only used if lod_spcfy()=true)
 function lod_mnDist()
     return 2
 end
 ################################################################################
-#sets max distance away to connect gen to oss
+#sets max distance upstream to connect gen to oss and which wind profiles are included at OSS
 function lod_gen2Noss()
     return 2
 end
 ################################################################################
 #sets offset of sourounding OSS from center generator
-function lod_genSpc()
+#=function lod_genSpc()
     return 2.5
-end
+end=#
 ################################################################################
 #set west buffer on domain
 function loD_wbuff()
@@ -127,106 +158,88 @@ function lod_ossKv()
 end
 ################################################################################
 function lod_cnceMva()
-    return 500.0
+    return 250.0
 end
 ################################################################################
-#sets the power level of each concession
-function lod_cncesMva(nc)
-    mva=Array{Float64,1}()
-    for i=1:nc
-        push!(mva,lod_cnceMva())
-    end
-    return mva
-end
-################################################################################
-#sets wind of each concession
-function lod_cncesWnd(nc)
-    wnd=Array{Tuple,1}()
-    #include special functions for gamma
-    #=mn=13
-    a=mn/gamma(1.5)=#
-    a=11.08
-    k=2.32
-    for i=1:nc
-        push!(wnd,(k,a))
-    end
-    return wnd
-end
-################################################################################
-#sets wind of each concession
-function lod_cncesTrbs(nc)
-    trbs=Array{turb,1}()
-    for i=1:nc
-        trb=turb()
-        wndD_TrqCrv(trb)
-        push!(trbs,trb)
-    end
-    return trbs
-end
+
 ###############################################################################
 ####################### OWPP/pcc location #####################################
 ###############################################################################
 function lod_cncesGps()
-    c0=[]
-    c1=[]
-    c2=[]
-    c3=[]
-    c4=[]
-    c5=[]
-    c6=[]
-    c7=[]
-    c=[]
+    c=Array{Tuple,1}()
+    wnd=Array{Tuple,1}()
+    p=Array{Float64,1}()
+    trbs=Array{turb,1}()
     #concessions
     #Norther
-    push!(c0,3.015833)
-    push!(c0,51.52806)
-    push!(c,c0)
+    push!(c,(3.015833,51.52806))
+    push!(p,250.0)
+    push!(wnd,(2.32,11.08))
+    trb=turb()
+    wndD_TrqCrv(trb)
+    push!(trbs,trb)
     #Thornton
-    push!(c1,(2.97+2.919972)/2)
-    push!(c1,(51.56+51.53997)/2)
-    push!(c,c1)
+    push!(c,((2.97+2.919972)/2,(51.56+51.53997)/2))
+    push!(p,250.0)
+    push!(wnd,(2.32,11.08))
+    trb=turb()
+    wndD_TrqCrv(trb)
+    push!(trbs,trb)
     #Rentel
-    push!(c2,2.939972)
-    push!(c2,51.59)
-    push!(c,c2)
+    push!(c,(2.939972,51.59))
+    push!(p,250.0)
+    push!(wnd,(2.32,11.08))
+    trb=turb()
+    wndD_TrqCrv(trb)
+    push!(trbs,trb)
     #Northwind
-    push!(c3,2.900972)
-    push!(c3,51.61897)
-    push!(c,c3)
+    push!(c,(2.900972,51.61897))
+    push!(p,250.0)
+    push!(wnd,(2.32,11.08))
+    trb=turb()
+    wndD_TrqCrv(trb)
+    push!(trbs,trb)
     #Seastar
-    push!(c4,2.859972)
-    push!(c4,51.63)
-    push!(c,c4)
+    push!(c,(2.859972,51.63))
+    push!(p,250.0)
+    push!(wnd,(2.32,11.08))
+    trb=turb()
+    wndD_TrqCrv(trb)
+    push!(trbs,trb)
     #Nobelwind/Belwind
-    #=push!(c5,(2.819972+2.799972)/2)
-    push!(c5,(51.664+51.67)/2)
-    push!(c,c5)
+    push!(c,((2.819972+2.799972)/2,(51.664+51.67)/2))
+    push!(p,250.0)
+    push!(wnd,(2.32,11.08))
+    trb=turb()
+    wndD_TrqCrv(trb)
+    push!(trbs,trb)
     #Northwester
-    push!(c6,2.757)
-    push!(c6,51.68597)
-    push!(c,c6)
+    push!(c,(2.757,51.68597))
+    push!(p,250.0)
+    push!(wnd,(2.32,11.08))
+    trb=turb()
+    wndD_TrqCrv(trb)
+    push!(trbs,trb)
     #Mermaid
-    push!(c7,2.74)
-    push!(c7,51.71997)
-    push!(c,c7)=#
-    return c
+    push!(c,(2.74,51.71997))
+    push!(p,250.0)
+    push!(wnd,(2.32,11.08))
+    trb=turb()
+    wndD_TrqCrv(trb)
+    push!(trbs,trb)
+    return c,p,wnd,trbs
 end
 ################################################################################
 function lod_pccGps()
-    pcc0=Array{Float64,1}()
-    pcc1=Array{Float64,1}()
-    pcc=[]
+    pcc=Array{Tuple,1}()
     #PCCs,
-
-    #push!(pcc0,2.939692)
-    #push!(pcc0,51.239737)
-    #push!(pcc,pcc0)
-    push!(pcc1,3.183611)
-    push!(pcc1,51.32694)
-    push!(pcc,pcc1)
+    #push!(pcc,(2.939692,51.239737))
+    push!(pcc,(3.183611,51.32694))
     base_lg=pcc[1][1]#2.941944
     base_lt=pcc[1][2]#51.24306
+    print("reference longitude: ")
     println(base_lg)
+    print("reference latitude: ")
     println(base_lt)
     return pcc
 end
@@ -363,5 +376,74 @@ end
 #=function lod_concessionAreas()
     areas=[38.0,19.0,23.0,14.0,18.0,35.0,12.0,16.0]
     return areas
+end=#
+################################################################################
+#place OSS north of generation?
+#=function lod_noss()
+    return true
+end
+###############################################################################
+#place OSS south of generation?
+function lod_soss()
+    return true
+end
+###############################################################################
+#place OSS swest of generation?
+function lod_woss()
+    return true
+end
+###############################################################################
+#place OSS east of generation?
+function lod_eoss()
+    return true
+end
+###############################################################################
+#place OSS on generation?
+function lod_goss()
+    return true
+end
+###############################################################################
+#extend OSS to the east of generation?
+function lod_eosss()
+    return false
+end
+###############################################################################
+#extend OSS to the west of generation?
+function lod_wosss()
+    return true
+end=#
+###############################################################################
+#sets the power level of each concession
+#=function lod_cncesMva(nc)
+    mva=Array{Float64,1}()
+    for i=1:nc
+        push!(mva,lod_cnceMva())
+    end
+    return mva
+end=#
+################################################################################
+#sets wind of each concession
+#=function lod_cncesWnd(nc)
+    wnd=Array{Tuple,1}()
+    #include special functions for gamma
+    #=mn=13
+    a=mn/gamma(1.5)=#
+    a=11.08
+    k=2.32
+    for i=1:nc
+        push!(wnd,(k,a))
+    end
+    return wnd
+end
+################################################################################
+#sets wind of each concession
+function lod_cncesTrbs(nc)
+    trbs=Array{turb,1}()
+    for i=1:nc
+        trb=turb()
+        wndD_TrqCrv(trb)
+        push!(trbs,trb)
+    end
+    return trbs
 end=#
 ################################################################################

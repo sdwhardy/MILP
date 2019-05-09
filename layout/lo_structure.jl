@@ -53,25 +53,28 @@ mutable struct cnce
       trb::turb
       kv::Float64
       num::Int64
+      id::String
 end
 #cnce()=cnce(gps(),"colruyt",69.69,coord())
-cnce()=cnce(gps(),xy(),69.69,(69.69,69.69),turb(),69.69,69)
+cnce()=cnce(gps(),xy(),69.69,(69.69,69.69),turb(),69.69,69,"sixty-nine")
 ###################################################################
 mutable struct oss
       coord::xy
       mvas::Array{Float64}
       wnds::Array{Tuple}
       num::Int64
+      id::String
 end
-oss()=oss(xy(),[],[],69)
+oss()=oss(xy(),[],[],69,"sixty-nine")
 ###################################################################
 mutable struct pcc
       gps::gps
       coord::xy
       kv::Float64
       num::Int64
+      id::String
 end
-pcc()=pcc(gps(),xy(),69.69,69)
+pcc()=pcc(gps(),xy(),69.69,69,"sixty-nine")
 ################################################################################
 
 ###############################################################################################

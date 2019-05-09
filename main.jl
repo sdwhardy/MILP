@@ -2,20 +2,23 @@ using Distributions
 using StatsPlots
 using SpecialFunctions
 using Polynomials
-
 #MILP
 using PowerModels
-using Cbc
-using Ipopt
-using Juniper
-using Pavito
-using Mosek
+#using Mosek
+using JuMP, Gurobi
+#using Cbc
+#using Ipopt
+#using Juniper
+#using Pavito
+#using MAT
+
 #Includes all dependancies
 #All data structures
 include("cost/cst_structure.jl")#cost
 include("wind/wnd_structure.jl")#wind
 include("eqp/eqp_structure.jl")#must be included after cst and wind strucs
 include("layout/lo_structure.jl")#layout
+include("TNEP/tpp_structure.jl")#layout
 
 #input data
 include("eqp/eqp_data.jl")#equipment
@@ -33,8 +36,88 @@ include("TNEP/tnep_milp.jl")#milp
 include("TNEP/tnep_post_process.jl")#Post processing milp
 
 
-using MAT
-##################################################################
+#main()
+########################################################################################
+############################# MILP #####################################################
+########################################################################################
+function mn_buildMap(cnts,sol,obm)
+    map=lof_layoutOcn(cnts)
+    tpp_main2mfile(map,sol,obm)
+    ppf_printOcn(map)#print ocean
+    return map
+end
+function mn_slvMilp(map)
+    idd,fmap,raw,nt=tnep_milp(map)
+    tpp_prnt2Scrn(raw,nt)
+    ppf_printOcn(fmap)
+    objmn=trunc(Int,ceil(raw["objective"]))
+    return idd,objmn
+end
+function mn_stUpTnep()
+    solmin=Array{Int64,1}()
+    objmin=10000
+    cntrls=control()
+    cntrls.xrad=true
+    cntrls.neib1=false
+    cntrls.neib3=false
+    cntrls.xradPcc=false
+    cntrls.xradHlf=false
+    cntrls.spcfy=false
+    cntrls.xXrad=[3,5,7]
+    cntrls.xXneib1=[1,7]
+    cntrls.xXneib3=[1,7]
+    mp=mn_buildMap(cntrls,solmin,objmin)
+    ppf_printOcn(mp)#print ocean
+    #=solmin=[]
+    objmin=0
+    solmin,objmin=mn_slvMilp(mp)
+    cntrls.neib1=true
+    mp=mn_buildMap(cntrls,solmin,objmin)
+    solmin=[]
+    objmin=0
+    solmin,objmin=mn_slvMilp(mp)
+    cntrls.xradPcc=true
+    mp=mn_buildMap(cntrls,solmin,objmin)
+    solmin=[]
+    objmin=0
+    solmin,objmin=mn_slvMilp(mp)
+    cntrls.xXrad=2
+    cntrls.xXneib1=2
+    cntrls.xXneib3=2
+    mp=mn_buildMap(cntrls,solmin,objmin)
+    solmin=[]
+    objmin=0
+    solmin,objmin=mn_slvMilp(mp)
+    ppf_printOcn(mp)#print ocean=#
+end
+mn_stUpTnep()
+
+
+network_data = PowerModels.parse_file("results/owpp_tnep_map.m")
+network_data["ne_branch"]["3935"]["br_status"]
+network_data["ne_branch"]["3935"]["br_status"]=1.0
+network_data["ne_branch"]["3935"]["br_status"]
+fileName="results/owpp_tnep_nw.mat"
+mfile = open(fileName,"w")
+print(mfile,network_data)
+occursin("1422450110", "1341422450110")
+occursin("122450110", "1341422450110")
+
+
+
+
+
+
+
+
+
+
+
+
+
+########################################################################################
+############################ Cost Functions ############################################
+########################################################################################
 #################### Cost of cable with no transformers #################
 function cbl_cost(l,S,kv,wp,o2o)
     arc=cstF_cbl_ttl(l,S,kv,wp,o2o)
@@ -76,8 +159,8 @@ end
 ##################################################################
 #A main function is used to encasulate code as outa function is global scope and should be avoided
 function main()
-    l=5.004182064171611
-    S=1000
+    l=45
+    S=1517
     kv=220
 
     #mn=13
@@ -100,10 +183,5 @@ function main()
     #lcbl_cost(l,kv,wp,o2o)#cstF_linearize_cbl
 end
 ########################################################################################
-#main()
-map=lof_layoutOcn()
-ppf_main2mfile(map)
-fmap,raw,nt=tnep_milp(map)
-#ppf_printOcn(map)#print ocean
-tpp_prnt2Scrn(raw,nt)
-ppf_printOcn(fmap)#print ocean
+########################################################################################
+########################################################################################

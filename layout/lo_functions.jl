@@ -2,24 +2,34 @@
 ###############################################################################
 ############################ Main #############################################
 ###############################################################################
-function lof_layoutOcn()
+function lof_layoutOcn(cnt)
     ocean=eez()#build the eez in the ocean
     lof_shoreConnect(ocean.pccs)#add the gps of points of common coupling
+    println("PCCs positioned...")
     ocean.cnces=lof_layoutZone(length(ocean.pccs))#add the region with concessions
+    println("OWPPs positioned...")
     base=lof_bseCrd(ocean)#find base coordinates
     lof_dists(ocean,base)#set layout in terms of base
+    println("GPS coordinates projected onto cartesian plane...")
     os=lof_rotateOcn(ocean)#apply rotation to align n-s with y
     lof_slideOcn(ocean,os)#slide to align western most point with x=0
+    println("Axis transformed...")
     lof_ewbnd(ocean)#find the boundary of region containnig oss
     #=println(ocean.bnd.wbnd.lims)
     println(ocean.bnd.wbnd.lmodel)
     println(ocean.bnd.ebnd.lims)
     println(ocean.bnd.ebnd.lmodel)=#
-    lof_osss(ocean)#add all osss within boundary
+    println("boundary drawn...")
+    lof_osss(ocean,cnt)#add all osss within boundary
+    println("OSSs positioned...")
     lof_GoArcs(ocean)#add all gen to oss arcs within boundary
+    println("OWPP to OSS arcs complete...")
     lof_GpArcs(ocean)#add all gen to pcc arcs within boundary
+    println("OWPP to PCC arcs complete...")
     lof_OpArcs(ocean)#add all oss to pcc arcs within boundary
+    println("OSS to PCC arcs complete...")
     lof_OoArcs(ocean)#add all oss to oss arcs within boundary
+    println("OSS to OSS arcs complete...")
     #println(length(ocean.gOarcs)+length(ocean.oOarcs)+length(ocean.oParcs))
     #println(length(ocean.cnces)+length(ocean.osss)+length(ocean.pccs))
     #ppf_printOcn(ocean)#print ocean
@@ -74,10 +84,10 @@ end
 #base layout of the zone consisting of all concessions
 function lof_layoutZone(num)
     km=1#scale
-    gpss=lod_cncesGps()#get gps coords of each concession
-    mvas=lod_cncesMva(length(gpss))#get power of each concession
-    wnds=lod_cncesWnd(length(gpss))#get wind profiles for each concession
-    trbs=lod_cncesTrbs(length(gpss))#get turbine info for each concession
+    gpss,mvas,wnds,trbs=lod_cncesGps()#get gps coords/power/winds/turbines of each concession
+    #mvas=lod_cncesMva(length(gpss))#get power of each concession
+    #wnds=lod_cncesWnd(length(gpss))#get wind profiles for each concession
+    #trbs=lod_cncesTrbs(length(gpss))#get turbine info for each concession
     #areas=lod_concessionAreas()
     zone=Array{cnce,1}()
     #loop through all concessions
@@ -147,11 +157,13 @@ end
 ################################################################################
 #translates the entire region
 function lof_slideOcn(ocean,os)
-    for i=1:length(ocean.cnces)
-        ocean.cnces[i].coord.x=lof_shift(ocean.cnces[i].coord.x,abs(os))
+    for cnce in ocean.cnces
+        cnce.coord.x=lof_shift(cnce.coord.x,abs(os))
+        cnce.id="1"*string(trunc(Int,10*cnce.coord.x))*string(trunc(Int,10*cnce.coord.y))
     end
-    for i=1:length(ocean.pccs)
-        ocean.pccs[i].coord.x=lof_shift(ocean.pccs[i].coord.x,abs(os))
+    for pcc in ocean.pccs
+        pcc.coord.x=lof_shift(pcc.coord.x,abs(os))
+        pcc.id="0"*string(trunc(Int,10*pcc.coord.x))*string(trunc(Int,10*pcc.coord.y))
     end
 end
 ###############################################################################
@@ -198,10 +210,10 @@ function lof_eBnd(bd,f,pnts)
         end
         if length(thetas) != 0
             #println(thetas)
-            pnt=findmin(thetas)[2]#select th eminimum angle
+            pnt=findmin(thetas)[2]#select the minimum angle
             #println(pnts[pnt])
             push!(bd,pnts[pnt])#chose this point as next boundary point
-            if pnts[pnt].x != f.x && pnts[pnt].y != f.y
+            if pnts[pnt].x != f.x || pnts[pnt].y != f.y
                 deleteat!(pnts,pnt)#remove the used point
             end
             thetas=[]
@@ -267,9 +279,11 @@ function lof_ewbnd(ocn)
     push!(all,deepcopy(ocn.pccs[1].coord))
     for i in ocn.cnces[1:length( ocn.cnces)]
         push!(all,deepcopy(i.coord))
+
     end
 
     #sets east and west boundary
+
     Wbnd,all=lof_wBnd(Wbnd,fnsh,all)#finds western boundary
     Ebnd=lof_eBnd(Ebnd,fnsh,deepcopy(all))#finds eastern boundary
     Wbnd=lof_addWBuff(Wbnd)#add buffer to western boundary
@@ -334,104 +348,6 @@ function lof_eLim(y,bd)
     end
     return elx
 end
-###############################################################################
-function lof_ossLine(xy,num,rg,osss)
-    spc=lod_genSpc()
-    mxy=rg.cnces[length(rg.cnces)].coord.y+loD_nbuff()
-    mny=rg.cnces[1].coord.y-loD_sbuff()
-    elx=lof_eLim(xy.y,rg.bnd.ebnd)
-    wlx=lof_wLim(xy.y,rg.bnd.wbnd)
-
-    #add oss to the north of generation
-    if (xy.y+spc <= mxy && lod_noss()==true)
-        x=max(xy.x, lof_wLim(xy.y+spc,rg.bnd.wbnd))
-        x=min(x, lof_eLim(xy.y+spc,rg.bnd.ebnd))
-        osub=oss()
-        osub.coord.x=deepcopy(x)
-        osub.coord.y=deepcopy(xy.y+spc)
-        osub.num=num
-        push!(osss,osub)
-        num=num+1
-    else
-    end
-
-
-    #add oss to the east of generation
-    if (xy.x+spc <= elx && lod_eoss()==true)
-        osub=oss()
-        osub.coord.x=deepcopy(xy.x+spc)
-        osub.coord.y=deepcopy(xy.y)
-        osub.num=num
-        push!(osss,osub)
-        num=num+1
-    else
-    end
-    #add oss to the east of generation
-    if (xy.x != elx && lod_eosss()==true)
-        i=1
-        while (xy.x+i*spc <= elx)
-            x=min(xy.x+(i+1)*spc, elx)
-            osub=oss()
-            osub.coord.x=deepcopy(x)
-            osub.coord.y=deepcopy(xy.y)
-            osub.num=num
-            push!(osss,osub)
-            num=num+1
-            i=i+1
-        end
-    else
-    end
-
-    #Oss at gen location
-    if (lod_goss()==true)
-        osub=oss()
-        osub.coord.x=deepcopy(xy.x)
-        osub.coord.y=deepcopy(xy.y)
-        osub.num=num
-        push!(osss,osub)
-        num=num+1
-    else
-    end
-
-    #add oss to the south of generation
-    if (xy.y-spc >= mny && lod_soss()==true)
-        osub=oss()
-        x=max(xy.x, lof_wLim(xy.y-spc,rg.bnd.wbnd))
-        x=min(x, lof_eLim(xy.y-spc,rg.bnd.ebnd))
-        osub.coord.x=deepcopy(x)
-        osub.coord.y=deepcopy(xy.y-spc)
-        osub.num=num
-        push!(osss,osub)
-        num=num+1
-    end
-    #add oss to the west of generation
-    if (xy.x-spc >= wlx && lod_woss()==true)
-        osub=oss()
-        osub.coord.x=deepcopy(xy.x-spc)
-        osub.coord.y=deepcopy(xy.y)
-        osub.num=num
-        push!(osss,osub)
-        num=num+1
-    else
-    end
-    #add oss to the west of generation
-    if (xy.x != wlx && lod_wosss()==true)
-        i=1
-        while (xy.x-i*spc >= wlx)
-            x=max(xy.x-(i+1)*spc, wlx)
-            osub=oss()
-            osub.coord.x=deepcopy(x)
-            osub.coord.y=deepcopy(xy.y)
-            osub.num=num
-            push!(osss,osub)
-            num=num+1
-            i=i+1
-        end
-    else
-    end
-    return num
-end
-###############################################################################
 function lof_mrgOss(xy1,xy2)
     xy1.x=(xy1.x+xy2.x)/2
     xy1.y=(xy1.y+xy2.y)/2
@@ -451,10 +367,11 @@ function lof_ossSprcfy(osss)
         while j<=length(osss)
             if lof_pnt2pnt_dist(osss[i].coord,osss[j].coord) <= mnDist
                 lof_mrgOss(osss[i].coord,osss[j].coord)
-                nm=osss[j].num
+                osss[j].id="2"*string(trunc(Int,10*osss[j].coord.x))*string(trunc(Int,10*osss[j].coord.y))
+                #nm=osss[j].num
                 deleteat!(osss,j)#remove the used point
                 #println(length(osss))
-                lof_renumOss(nm,j,osss)
+                #lof_renumOss(nm,j,osss)
             end
             j=j+1
         end
@@ -479,27 +396,434 @@ function lof_wndPfOss(osss,ocn)
     end
 end
 ###############################################################################
-function lof_osss(ocn)
-
+function lof_osss(ocn,cnt)
     num=length(ocn.pccs)+length(ocn.cnces)+1
     cns=reverse(ocn.cnces,1)
     osss=Array{oss,1}()
 
-    for i in cns
-        gen=i.coord
-        num=lof_ossLine(gen,num,ocn,osss)#lay oss
+
+    for i=1:length(cns)
+        if cnt.xrad==true
+            num=lof_ossXradius(i,num,cns,osss,cnt)#lay oss version 3
+        end
+        if cnt.neib1==true
+            num=lof_oss1neibs(i,num,cns,osss,cnt)#lay oss version 3
+        end
+        if cnt.neib3==true
+            num=lof_oss3neibs(i,num,cns,osss,cnt)
+        end
+        if cnt.xradPcc==true
+            num=lof_ossXradPcc(i,num,cns,ocn.pccs,osss,lod_rad(),false)#lay oss version 3
+        end
+        if (i<=lod_frcNum() && cnt.xradHlf==true)
+            num=lof_ossXradPcc(i,num,cns,ocn.pccs,osss,lod_rdFrc(),true)
+        end
     end
     nl=1
     ol=2
-    while nl != ol
-        ol=deepcopy(length(osss))
-        lof_ossSprcfy(osss)
-        nl=deepcopy(length(osss))
+    if lod_ossSpcfy()==true
+        while nl != ol
+            ol=deepcopy(length(osss))
+            lof_ossSprcfy(osss)
+            nl=deepcopy(length(osss))
+        end
     end
+    osss=lof_ossOrder(osss,ocn)
     lof_wndPfOss(osss,ocn)
     ocn.osss=deepcopy(osss)
 end
 ###############################################################################
+function lof_ossOrder(osss,ocn)
+    lnths=Array{Float64,1}()
+    ordrdOsss=Array{oss,1}()
+    num=length(ocn.pccs)+length(ocn.cnces)
+    for oss in osss
+        pcc_close=lof_xClosestPcc(oss,ocn.pccs)
+        push!(lnths,lof_pnt2pnt_dist(oss.coord,pcc_close.coord))
+    end
+    for lps=1:1:length(lnths)
+        push!(ordrdOsss,osss[findmax(lnths)[2]])
+        ordrdOsss[length(ordrdOsss)].num=deepcopy(num+lps)
+        lnths[findmax(lnths)[2]]=0
+    end
+    osss = ordrdOsss
+    return osss
+end
+###############################################################################
+########################## Oss Layout schemes #################################
+###############################################################################
+#find closest PCC
+function lof_xClosestPcc(i,pc)
+    x_close=pcc()
+    lnths=Array{Float64,1}()
+    for j=1:length(pc)
+        push!(lnths,lof_pnt2pnt_dist(i.coord,pc[j].coord))
+    end
+    mn=findmin(lnths)
+    x_close=pc[mn[2]]
+    return x_close
+end
+###############################################################################
+#find x closest owpp neighbours
+#=function lof_xClosestCns(i,cns,x)
+    x_close=Array{cnce,1}()
+    lnths=Array{Float64,1}()
+    for j=i+1:1:length(cns)
+        push!(lnths,lof_pnt2pnt_dist(cns[i].coord,cns[j].coord))
+    end
+    if x>length(lnths)
+        x=length(lnths)
+    end
+    while length(x_close)<x && length(lnths) != 0
+        mn=findmin(lnths)
+        push!(x_close,cns[mn[2]+i])
+        lnths[mn[2]]=Inf
+    end
+    return x_close
+end=#
+###############################################################################
+#find x closest owpp neighbours
+function lof_xClosestCns(i,cns,x)
+    x_close=Array{cnce,1}()
+    lnths=Array{Float64,1}()
+    for j=i+1:1:length(cns)
+        push!(lnths,lof_pnt2pnt_dist(cns[i].coord,cns[j].coord))
+    end
+    while (length(lnths) != 0 && length(x) != 0 && findmax(x)[1]>length(lnths))
+        deleteat!(x,findmax(x)[2])
+    end
+    lp=1
+    while length(x_close)<length(x) && length(lnths) != 0
+        mn=findmin(lnths)
+        if lp in x
+            push!(x_close,cns[mn[2]+i])
+        end
+        lnths[mn[2]]=Inf
+        lp=lp+1
+    end
+    return x_close
+end
+############################### Start #########################################
+######################## sets OSS between owpp and pccs  ######################
+###############################################################################
+function lof_ossXradPcc(i,num,cns,pccs,osss,rad,frac)
+    x=lof_xClosestPcc(cns[i],pccs)
+    if frac == true
+        rad=rad*lof_pnt2pnt_dist(cns[i].coord,x.coord)
+    end
+    osub=oss()
+    alpha_beta=reverse([[cns[i].coord.y,x.coord.y] ones(2)]\[cns[i].coord.x,x.coord.x])#fits linear model
+    osub.coord=lof_atXPcc(alpha_beta,cns[i],x,rad)
+    osub.id="2"*string(trunc(Int,10*osub.coord.x))*string(trunc(Int,10*osub.coord.y))
+    push!(osss,deepcopy(osub))
+    num=num+1
+    return num
+end
+###############################################################################
+#Sorts the relative position of OWPP to pcc
+function lof_atXPcc(mb,p1,pcc,rad)
+    xy1=xy()
+    if (p1.coord.x == pcc.coord.x && p1.coord.y > pcc.coord.y)
+        xy1.y=p1.coord.y-rad
+        xy1.x=p1.coord.x
+    elseif (p1.coord.x == pcc.coord.x && p1.coord.y < pcc.coord.y)
+        xy1.y=p1.coord.y+rad
+        xy1.x=p1.coord.x
+    elseif (p1.coord.y == pcc.coord.y && p1.coord.x > pcc.coord.x)
+        xy1.x=p1.coord.x-rad
+        xy1.y=p1.coord.y
+    elseif (p1.coord.y == pcc.coord.y && p1.coord.x < pcc.coord.x)
+        xy1.x=p1.coord.x+rad
+        xy1.y=p1.coord.y
+    else
+         lof_solvIntersPcc(xy1,p1,rad,mb)
+    end
+    return xy1
+end
+###############################################################################
+function lof_solvIntersPcc(xy1,p1,os,mb)
+    xy1.y=p1.coord.y-os
+    xy1.x=xy1.y*mb[2]+mb[1]
+    while lof_pnt2pnt_dist(p1.coord,xy1)<os
+        xy1.y=xy1.y-0.1
+        xy1.x=xy1.y*mb[2]+mb[1]
+    end
+end
+############################### Start #########################################
+###############sets OSS X OSS on the line to neighbouring owpp  ###############
+###############################################################################
+function lof_mdOss(c1,c2)
+    xy0=xy()
+    xy0.x=(c1.coord.x+c2.coord.x)/2
+    xy0.y=(c1.coord.y+c2.coord.y)/2
+    return xy0
+end
+###############################################################################
+function lof_oss1neibs(i,num,cns,osss,cnt)
+    x=cnt.xXneib1
+    x_close=lof_xClosestCns(i,cns,x)
+    for x in x_close
+        osub=oss()
+        osub.coord=lof_mdOss(x,cns[i])
+        osub.id="2"*string(trunc(Int,10*osub.coord.x))*string(trunc(Int,10*osub.coord.y))
+        push!(osss,deepcopy(osub))
+        num=num+1
+    end
+    return num
+end
+###############################################################################
+function lof_oss3neibs(i,num,cns,osss,cnt)
+    x=cnt.xXneib3
+    x_close=lof_xClosestCns(i,cns,x)
+    xy0=cnce()
+    for x in x_close
+        osub1=oss()
+        osub2=oss()
+        xy0.coord=lof_mdOss(x,cns[i])
+        osub1.coord=lof_mdOss(xy0,cns[i])
+        osub2.coord=lof_mdOss(x,xy0)
+        osub1.id="2"*string(trunc(Int,10*osub1.coord.x))*string(trunc(Int,10*osub1.coord.y))
+        num=num+1
+        osub2.id="2"*string(trunc(Int,10*osub2.coord.x))*string(trunc(Int,10*osub2.coord.y))
+        push!(osss,deepcopy(osub1))
+        push!(osss,deepcopy(osub2))
+        num=num+1
+    end
+    return num
+end
+############################### Start #########################################
+###sets OSS on the radius x cicle on the line to neighbouring owpp  ###########
+###############################################################################
+#finds the point on the circle of radius r around the owpp that intersects the line to a neighbouring OWPP
+function lof_solvIntersect(xy1,xy2,p1,p2,os,mb)
+    xy1.y=p1.coord.y+os
+    xy1.x=xy1.y*mb[2]+mb[1]
+    while lof_pnt2pnt_dist(p1.coord,xy1)>2
+        xy1.y=xy1.y-0.1
+        xy1.x=xy1.y*mb[2]+mb[1]
+    end
+
+    xy2.y=p2.coord.y-os
+    xy2.x=xy2.y*mb[2]+mb[1]
+    while lof_pnt2pnt_dist(p2.coord,xy2)>2
+        xy2.y=xy2.y+0.1
+        xy2.x=xy2.y*mb[2]+mb[1]
+    end
+end
+###############################################################################
+#Sorts the relative position of one OWPP to another
+function lof_atX(mb,p1,p2)
+    os=lod_rad()
+    xy1=xy()
+    xy2=xy()
+    if (p1.coord.x == p2.coord.x && p1.coord.y > p2.coord.y)
+        xy1.y=p1.coord.y-os
+        xy2.y=p2.coord.y+os
+    elseif (p1.coord.x == p2.coord.x && p1.coord.y < p2.coord.y)
+        xy1.y=p1.coord.y+os
+        xy2.y=p2.coord.y-os
+    elseif (p1.coord.y == p2.coord.y && p1.coord.x > p2.coord.x)
+        xy1.x=p1.coord.x-os
+        xy2.x=p2.coord.x+os
+    elseif (p1.coord.y == p2.coord.y && p1.coord.x < p2.coord.x)
+        xy1.x=p1.coord.x+os
+        xy2.x=p2.coord.x-os
+    elseif (p1.coord.x < p2.coord.x && p1.coord.y < p2.coord.y)
+         lof_solvIntersect(xy1,xy2,p1,p2,os,mb)
+    elseif (p1.coord.x < p2.coord.x && p1.coord.y > p2.coord.y)
+        lof_solvIntersect(xy2,xy1,p2,p1,os,mb)
+    elseif (p1.coord.x > p2.coord.x && p1.coord.y < p2.coord.y)
+        lof_solvIntersect(xy1,xy2,p1,p2,os,mb)
+    elseif (p1.coord.x > p2.coord.x && p1.coord.y > p2.coord.y)
+        lof_solvIntersect(xy2,xy1,p2,p1,os,mb)
+    else
+        println("Caution: No OSS Xkm radius placement matched!")
+    end
+    return xy1,xy2
+end
+###############################################################################
+#main control func to lay OSS on radius around the OWPP
+function lof_ossXradius(i,num,cns,osss,cnt)
+    x=cnt.xXrad
+    x_close=lof_xClosestCns(i,cns,x)
+    for x in x_close
+        osub1=oss()
+        osub2=oss()
+        alpha_beta=reverse([[cns[i].coord.y,x.coord.y] ones(2)]\[cns[i].coord.x,x.coord.x])#fits linear model
+        osub1.coord,osub2.coord=lof_atX(alpha_beta,cns[i],x)
+        osub1.id="2"*string(trunc(Int,10*osub1.coord.x))*string(trunc(Int,10*osub1.coord.y))
+        num=num+1
+        osub2.id="2"*string(trunc(Int,10*osub2.coord.x))*string(trunc(Int,10*osub2.coord.y))
+        push!(osss,deepcopy(osub1))
+        push!(osss,deepcopy(osub2))
+        num=num+1
+    end
+    return num
+end
+############################### Start #########################################
+####### sets x number of OSS on the line between neighbouring owpp  ###########
+###############################################################################
+###############################################################################
+#Layout scheme 1
+function lof_ossLine(xy,num,rg,osss)
+    spc=lod_genSpc()
+    mxy=rg.cnces[length(rg.cnces)].coord.y+loD_nbuff()
+    mny=rg.cnces[1].coord.y-loD_sbuff()
+    elx=lof_eLim(xy.y,rg.bnd.ebnd)
+    wlx=lof_wLim(xy.y,rg.bnd.wbnd)
+
+    #add oss to the north of generation
+    if (xy.y+spc <= mxy && lod_noss()==true)
+        x=max(xy.x, lof_wLim(xy.y+spc,rg.bnd.wbnd))
+        x=min(x, lof_eLim(xy.y+spc,rg.bnd.ebnd))
+        osub=oss()
+        osub.coord.x=deepcopy(x)
+        osub.coord.y=deepcopy(xy.y+spc)
+        osub.num=deepcopy(num)
+        push!(osss,osub)
+        num=num+1
+    else
+    end
+
+
+    #add oss to the east of generation
+    if (xy.x+spc <= elx && lod_eoss()==true)
+        osub=oss()
+        osub.coord.x=deepcopy(xy.x+spc)
+        osub.coord.y=deepcopy(xy.y)
+        osub.num=deepcopy(num)
+        push!(osss,osub)
+        num=num+1
+    else
+    end
+    #add oss to the east of generation
+    if (xy.x != elx && lod_eosss()==true)
+        i=1
+        while (xy.x+i*spc <= elx)
+            x=min(xy.x+(i+1)*spc, elx)
+            osub=oss()
+            osub.coord.x=deepcopy(x)
+            osub.coord.y=deepcopy(xy.y)
+            osub.num=deepcopy(num)
+            push!(osss,osub)
+            num=num+1
+            i=i+1
+        end
+    else
+    end
+
+    #Oss at gen location
+    #=if (lod_goss()==true)
+        osub=oss()
+        osub.coord.x=deepcopy(xy.x)
+        osub.coord.y=deepcopy(xy.y)
+        osub.num=deepcopy(num)
+        push!(osss,osub)
+        num=num+1
+    else
+    end=#
+
+    #add oss to the south of generation
+    if (xy.y-spc >= mny && lod_soss()==true)
+        osub=oss()
+        x=max(xy.x, lof_wLim(xy.y-spc,rg.bnd.wbnd))
+        x=min(x, lof_eLim(xy.y-spc,rg.bnd.ebnd))
+        osub.coord.x=deepcopy(x)
+        osub.coord.y=deepcopy(xy.y-spc)
+        osub.num=deepcopy(num)
+        push!(osss,osub)
+        num=num+1
+    end
+    #add oss to the west of generation
+    if (xy.x-spc >= wlx && lod_woss()==true)
+        osub=oss()
+        osub.coord.x=deepcopy(xy.x-spc)
+        osub.coord.y=deepcopy(xy.y)
+        osub.num=deepcopy(num)
+        push!(osss,osub)
+        num=num+1
+    else
+    end
+    #add oss to the west of generation
+    if (xy.x != wlx && lod_wosss()==true)
+        i=1
+        while (xy.x-i*spc >= wlx)
+            x=max(xy.x-(i+1)*spc, wlx)
+            osub=oss()
+            osub.coord.x=deepcopy(x)
+            osub.coord.y=deepcopy(xy.y)
+            osub.num=deepcopy(num)
+            push!(osss,osub)
+            num=num+1
+            i=i+1
+        end
+    else
+    end
+    return num
+end
+###############################################################################
+#Layout scheme 2
+function lof_ossLine2(xy,num,rg,osss)
+    spc=lod_genSpc()
+    mxy=rg.cnces[length(rg.cnces)].coord.y+loD_nbuff()
+    mny=rg.cnces[1].coord.y-loD_sbuff()
+    elx=lof_eLim(xy.y,rg.bnd.ebnd)
+    wlx=lof_wLim(xy.y,rg.bnd.wbnd)
+
+
+
+    #Oss at gen location
+    if (lod_goss()==true)
+        osub=oss()
+        osub.coord.x=deepcopy(xy.x)
+        osub.coord.y=deepcopy(xy.y)
+        osub.num=deepcopy(num)
+        push!(osss,osub)
+        num=num+1
+    else
+    end
+    for i in rg.cnces
+        osub=oss()
+        osub.coord=lof_avePnt([xy,i.coord])
+        osub.num=deepcopy(num)
+        push!(osss,osub)
+        num=num+1
+    end
+    return num
+end
+###############################################################################
+###############################################################################
+#Layout scheme 3
+function lof_ossLine3(i,num,rg,cns,osss)
+
+    xy=cns[i].coord
+    elx=lof_eLim(xy.y,rg.bnd.ebnd)
+    wlx=lof_wLim(xy.y,rg.bnd.wbnd)
+
+
+
+    #Oss at gen location
+    if (lod_goss()==true)
+        osub=oss()
+        osub.coord.x=deepcopy(xy.x)
+        osub.coord.y=deepcopy(xy.y)
+        osub.num=deepcopy(num)
+        push!(osss,osub)
+        num=num+1
+    else
+    end
+    if i<length(cns)
+        osub=oss()
+        osub.coord=lof_avePnt([xy,cns[i+1].coord])
+        osub.num=deepcopy(num)
+        push!(osss,osub)
+        num=num+1
+    end
+    return num
+end
+###############################################################################
+###############################################################################
+
 
 ###########################################################################################################
 ########################################### arcs ##########################################################
@@ -567,8 +891,13 @@ function lof_avePnt(vec)
     XY.y=0
     tot=0
     for i in vec
-        XY.x=XY.x+i.coord.x
-        XY.y=XY.y+i.coord.y
+        if typeof(i) != typeof(xy())
+            XY.x=XY.x+i.coord.x
+            XY.y=XY.y+i.coord.y
+        else
+            XY.x=XY.x+i.x
+            XY.y=XY.y+i.y
+        end
         tot=tot+1
     end
     XY.x=XY.x/tot
