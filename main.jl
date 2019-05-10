@@ -40,69 +40,94 @@ include("TNEP/tnep_post_process.jl")#Post processing milp
 ########################################################################################
 ############################# MILP #####################################################
 ########################################################################################
-function mn_buildMap(cnts,sol,obm)
-    map=lof_layoutOcn(cnts)
-    tpp_main2mfile(map,sol,obm)
-    ppf_printOcn(map)#print ocean
-    return map
-end
 function mn_slvMilp(map)
     idd,fmap,raw,nt=tnep_milp(map)
-    tpp_prnt2Scrn(raw,nt)
-    ppf_printOcn(fmap)
+    mystring=tpp_prnt2Scrn(raw,nt)
     objmn=trunc(Int,ceil(raw["objective"]))
-    return idd,objmn
+    return idd,objmn,mystring,fmap
 end
-function mn_stUpTnep()
+function mn_buildMap(cnts)
+    map=lof_layoutOcn(cnts)
+    return map
+end
+function mn_setUpTnep()
     solmin=Array{Int64,1}()
     objmin=10000
     cntrls=control()
     cntrls.xrad=true
-    cntrls.neib1=false
-    cntrls.neib3=false
+    cntrls.neib1=true
+    cntrls.neib3=true
     cntrls.xradPcc=false
     cntrls.xradHlf=false
     cntrls.spcfy=false
-    cntrls.xXrad=[3,5,7]
-    cntrls.xXneib1=[1,7]
-    cntrls.xXneib3=[1,7]
-    mp=mn_buildMap(cntrls,solmin,objmin)
-    ppf_printOcn(mp)#print ocean
-    #=solmin=[]
-    objmin=0
-    solmin,objmin=mn_slvMilp(mp)
-    cntrls.neib1=true
-    mp=mn_buildMap(cntrls,solmin,objmin)
-    solmin=[]
-    objmin=0
-    solmin,objmin=mn_slvMilp(mp)
-    cntrls.xradPcc=true
-    mp=mn_buildMap(cntrls,solmin,objmin)
-    solmin=[]
-    objmin=0
-    solmin,objmin=mn_slvMilp(mp)
-    cntrls.xXrad=2
-    cntrls.xXneib1=2
-    cntrls.xXneib3=2
-    mp=mn_buildMap(cntrls,solmin,objmin)
-    solmin=[]
-    objmin=0
-    solmin,objmin=mn_slvMilp(mp)
-    ppf_printOcn(mp)#print ocean=#
+    cntrls.xXrad=[1,2,3,4,5,6,7]
+    cntrls.xXneib1=[1,2,3,4,5,6,7]
+    cntrls.xXneib3=[1,2,3,4,5,6,7]
+    mp=mn_buildMap(cntrls)
+    tpp_main2mfile(mp,solmin,objmin)
+    return mp.asBuilt
 end
-mn_stUpTnep()
 
 
-network_data = PowerModels.parse_file("results/owpp_tnep_map.m")
-network_data["ne_branch"]["3935"]["br_status"]
-network_data["ne_branch"]["3935"]["br_status"]=1.0
-network_data["ne_branch"]["3935"]["br_status"]
-fileName="results/owpp_tnep_nw.mat"
-mfile = open(fileName,"w")
-print(mfile,network_data)
-occursin("1422450110", "1341422450110")
-occursin("122450110", "1341422450110")
 
+function mn_tnep_full()
+    ab=mn_setUpTnep()
+    mv("results/owpp_tnep_map.mat", "results/owpp_tnep_map.m", force=true)
+    network_data_all = PowerModels.parse_file("results/owpp_tnep_map.m")
+    #network_data_all["bus"]
+    #network_data_all["ne_branch"]
+
+    #length(network_data_all["bus"])
+    oplssngs=Array{oplossing,1}()
+    cmbs=[[1],[2,3],[4,5,6,7]]
+        for vec in cmbs
+            println(vec)
+        #x=2
+            #solve initialization problem
+            solmin=Array{Int64,1}()
+            objmin=10000
+            cntrls=control()
+            cntrls.xrad=true
+            cntrls.neib1=false
+            cntrls.neib3=false
+            cntrls.xradPcc=false
+            cntrls.xradHlf=false
+            cntrls.spcfy=false
+            cntrls.xXrad=deepcopy(vec)
+            cntrls.xXneib1=deepcopy(vec)
+            cntrls.xXneib3=deepcopy(vec)
+            oplssnga=oplossing()
+            map=mn_buildMap(cntrls)
+            map.asBuilt=ab
+            tpp_main2PartMfile(map,network_data_all,solmin,objmin)
+            oplssnga.eyeDs,oplssnga.objBst,oplssnga.sumry,oplssnga.layout=mn_slvMilp(map)
+
+            #solve initialization problem
+            cntrls=control()
+            cntrls.xrad=true
+            cntrls.neib1=true
+            cntrls.neib3=true
+            cntrls.xradPcc=false
+            cntrls.xradHlf=false
+            cntrls.spcfy=false
+            cntrls.xXrad=deepcopy(vec)
+            cntrls.xXneib1=deepcopy(vec)
+            cntrls.xXneib3=deepcopy(vec)
+            println(vec)
+            oplssng=oplossing()
+            mp=mn_buildMap(cntrls)
+            mp.asBuilt=ab
+            tpp_main2PartMfile(mp,network_data_all,oplssnga.eyeDs,oplssnga.objBst)
+            oplssng.eyeDs,oplssng.objBst,oplssng.sumry,oplssng.layout=mn_slvMilp(mp)
+            push!(oplssngs,oplssng)
+        end
+        return oplssngs
+        #return 1
+end
+#ab=mn_setUpTnep()
+ops=mn_tnep_full()
+println(ops[1].layout.pccs)
+ppf_printOcn(ops[1].layout)#print ocean
 
 
 

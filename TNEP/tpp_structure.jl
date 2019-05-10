@@ -14,6 +14,9 @@ control()=control(false,false,false,false,false,false,[],[],[])
 mutable struct oplossing
       eyeDs::Array{Int64,1}
       objBst::Float64
+      cntrl::control
+      layout::eez
+      sumry::String
 end
-oplossing()=oplossing([],69.69)
+oplossing()=oplossing([],69.69,control(),eez(),"sixty-nine")
 ###############################################################################

@@ -55,6 +55,11 @@ function lof_d2r(deg)
     return deg*pi/180
 end
 ################################################################################
+#Change radians to degrees
+function lof_r2d(rad)
+    return rad*180/pi
+end
+################################################################################
 #calculates length of 1 deg og longitude at given lattitude
 function lof_lg1deg(lat)
     return cos(lof_d2r(lat))*111
@@ -159,11 +164,11 @@ end
 function lof_slideOcn(ocean,os)
     for cnce in ocean.cnces
         cnce.coord.x=lof_shift(cnce.coord.x,abs(os))
-        cnce.id="1"*string(trunc(Int,10*cnce.coord.x))*string(trunc(Int,10*cnce.coord.y))
+        cnce.id="2"*string(cnce.num)
     end
     for pcc in ocean.pccs
         pcc.coord.x=lof_shift(pcc.coord.x,abs(os))
-        pcc.id="0"*string(trunc(Int,10*pcc.coord.x))*string(trunc(Int,10*pcc.coord.y))
+        pcc.id="1"*string(pcc.num)
     end
 end
 ###############################################################################
@@ -367,7 +372,7 @@ function lof_ossSprcfy(osss)
         while j<=length(osss)
             if lof_pnt2pnt_dist(osss[i].coord,osss[j].coord) <= mnDist
                 lof_mrgOss(osss[i].coord,osss[j].coord)
-                osss[j].id="2"*string(trunc(Int,10*osss[j].coord.x))*string(trunc(Int,10*osss[j].coord.y))
+                osss[j].id="3"*string(trunc(Int,10*osss[j].coord.x))*string(trunc(Int,10*osss[j].coord.y))
                 #nm=osss[j].num
                 deleteat!(osss,j)#remove the used point
                 #println(length(osss))
@@ -400,23 +405,28 @@ function lof_osss(ocn,cnt)
     num=length(ocn.pccs)+length(ocn.cnces)+1
     cns=reverse(ocn.cnces,1)
     osss=Array{oss,1}()
-
+    println(cnt)
 
     for i=1:length(cns)
         if cnt.xrad==true
+            num=0
             num=lof_ossXradius(i,num,cns,osss,cnt)#lay oss version 3
         end
         if cnt.neib1==true
+            num=0
             num=lof_oss1neibs(i,num,cns,osss,cnt)#lay oss version 3
         end
         if cnt.neib3==true
+            num=0
             num=lof_oss3neibs(i,num,cns,osss,cnt)
         end
         if cnt.xradPcc==true
+            num=0
             num=lof_ossXradPcc(i,num,cns,ocn.pccs,osss,lod_rad(),false)#lay oss version 3
         end
         if (i<=lod_frcNum() && cnt.xradHlf==true)
-            num=lof_ossXradPcc(i,num,cns,ocn.pccs,osss,lod_rdFrc(),true)
+            num=0
+            num=lof_ossXradPcc12(i,num,cns,ocn.pccs,osss,lod_rdFrc(),true)
         end
     end
     nl=1
@@ -431,6 +441,8 @@ function lof_osss(ocn,cnt)
     osss=lof_ossOrder(osss,ocn)
     lof_wndPfOss(osss,ocn)
     ocn.osss=deepcopy(osss)
+    #=print("bus 10 ID: ")
+    println(ocn.osss[10].id)=#
 end
 ###############################################################################
 function lof_ossOrder(osss,ocn)
@@ -514,7 +526,21 @@ function lof_ossXradPcc(i,num,cns,pccs,osss,rad,frac)
     osub=oss()
     alpha_beta=reverse([[cns[i].coord.y,x.coord.y] ones(2)]\[cns[i].coord.x,x.coord.x])#fits linear model
     osub.coord=lof_atXPcc(alpha_beta,cns[i],x,rad)
-    osub.id="2"*string(trunc(Int,10*osub.coord.x))*string(trunc(Int,10*osub.coord.y))
+    osub.id="6"*string(cns[i].id)*string(x.id)
+    push!(osss,deepcopy(osub))
+    num=num+1
+    return num
+end
+###############################################################################
+function lof_ossXradPcc12(i,num,cns,pccs,osss,rad,frac)
+    x=lof_xClosestPcc(cns[i],pccs)
+    if frac == true
+        rad=rad*lof_pnt2pnt_dist(cns[i].coord,x.coord)
+    end
+    osub=oss()
+    alpha_beta=reverse([[cns[i].coord.y,x.coord.y] ones(2)]\[cns[i].coord.x,x.coord.x])#fits linear model
+    osub.coord=lof_atXPcc(alpha_beta,cns[i],x,rad)
+    osub.id="7"*string(cns[i].id)*string(x.id)
     push!(osss,deepcopy(osub))
     num=num+1
     return num
@@ -562,12 +588,14 @@ end
 function lof_oss1neibs(i,num,cns,osss,cnt)
     x=cnt.xXneib1
     x_close=lof_xClosestCns(i,cns,x)
-    for x in x_close
+    for j=1:length(x_close)
         osub=oss()
-        osub.coord=lof_mdOss(x,cns[i])
-        osub.id="2"*string(trunc(Int,10*osub.coord.x))*string(trunc(Int,10*osub.coord.y))
+        osub.coord=lof_mdOss(x_close[j],cns[i])
+        osub.id="4"*string(x[j])*string(cns[i].id)*string(x_close[j].id)
         push!(osss,deepcopy(osub))
         num=num+1
+        print("1neibs ID: ")
+        println(osub.id)
     end
     return num
 end
@@ -576,15 +604,15 @@ function lof_oss3neibs(i,num,cns,osss,cnt)
     x=cnt.xXneib3
     x_close=lof_xClosestCns(i,cns,x)
     xy0=cnce()
-    for x in x_close
+    for j=1:length(x_close)
         osub1=oss()
         osub2=oss()
-        xy0.coord=lof_mdOss(x,cns[i])
+        xy0.coord=lof_mdOss(x_close[j],cns[i])
         osub1.coord=lof_mdOss(xy0,cns[i])
-        osub2.coord=lof_mdOss(x,xy0)
-        osub1.id="2"*string(trunc(Int,10*osub1.coord.x))*string(trunc(Int,10*osub1.coord.y))
+        osub2.coord=lof_mdOss(x_close[j],xy0)
+        osub1.id="5"*string(x[j])*string(cns[i].id)*string(x_close[j].id)*"1"
         num=num+1
-        osub2.id="2"*string(trunc(Int,10*osub2.coord.x))*string(trunc(Int,10*osub2.coord.y))
+        osub2.id="5"*string(x[j])*string(cns[i].id)*string(x_close[j].id)*"2"
         push!(osss,deepcopy(osub1))
         push!(osss,deepcopy(osub2))
         num=num+1
@@ -641,24 +669,24 @@ function lof_atX(mb,p1,p2)
     end
     return xy1,xy2
 end
+#$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$ FIX THE FUCKING IDS!!!!!!!!!!!!!!!!
 ###############################################################################
 #main control func to lay OSS on radius around the OWPP
 function lof_ossXradius(i,num,cns,osss,cnt)
     x=cnt.xXrad
     x_close=lof_xClosestCns(i,cns,x)
-    for x in x_close
+    for j=1:length(x_close)
         osub1=oss()
         osub2=oss()
-        alpha_beta=reverse([[cns[i].coord.y,x.coord.y] ones(2)]\[cns[i].coord.x,x.coord.x])#fits linear model
-        osub1.coord,osub2.coord=lof_atX(alpha_beta,cns[i],x)
-        osub1.id="2"*string(trunc(Int,10*osub1.coord.x))*string(trunc(Int,10*osub1.coord.y))
+        alpha_beta=reverse([[cns[i].coord.y,x_close[j].coord.y] ones(2)]\[cns[i].coord.x,x_close[j].coord.x])#fits linear model
+        osub1.coord,osub2.coord=lof_atX(alpha_beta,cns[i],x_close[j])
+        osub1.id="3"*string(x[j])*string(cns[i].id)*string(x_close[j].id)*"1"
         num=num+1
-        osub2.id="2"*string(trunc(Int,10*osub2.coord.x))*string(trunc(Int,10*osub2.coord.y))
+        osub2.id="3"*string(x[j])*string(cns[i].id)*string(x_close[j].id)*"2"
         push!(osss,deepcopy(osub1))
         push!(osss,deepcopy(osub2))
         num=num+1
     end
-    return num
 end
 ############################### Start #########################################
 ####### sets x number of OSS on the line between neighbouring owpp  ###########

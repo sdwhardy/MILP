@@ -121,7 +121,7 @@ function ppf_printOcn(ocean)
 	xd=Array{Float64,1}()
 	yd=Array{Float64,1}()
 	op=Array{Tuple,1}()
-	#=for i in ocean.oParcs
+	for i in ocean.oParcs
 		push!(xd,i.tail.coord.x)
 		push!(xd,i.head.coord.x)
 		push!(yd,i.tail.coord.y)
@@ -156,7 +156,7 @@ function ppf_printOcn(ocean)
 		plot!(p,xd,yd,color = :blue,xticks = ylimin:1:ylimax,xlims=(ylimin,ylimax),yticks = ylimin:5:ylimax,label="")
 		xd=[]
 		yd=[]
-	end=#
+	end
 	p
 	end
 ################################################################################

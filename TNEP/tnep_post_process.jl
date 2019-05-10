@@ -1,3 +1,141 @@
+function tpp_main2PartMfile(mp,nwrk,solmn,objmn)
+	fN="results/tnep_prt_nw.mat"
+	mf = open(fN,"w")
+	tpp_cblTtle2m(mf,mp.cnces[1].mva)#print top function data
+	cnt=tpp_prntPrtBuss(mf,mp,nwrk)#prints the bus data
+	tpp_prntGens(mf,mp)#prints all generator (OWPP) data
+	tpp_prntPrtBrns(mf,mp,objmn,cnt)#prints any pre-existing branches (onshore connections)
+	tpp_prntPrtNeBrns(mf,mp,nwrk,solmn)#prints all candiadate branch data
+	close(mf)
+end
+########################################################
+#prints bus titles and data for pccs, concessions, oss and onshore star point for partial map
+function tpp_prntPrtNeBrns(mf,mp,nw,s)
+	println(mf, "%candidate branch data")
+	println(mf, "%column_names%	f_bus	t_bus	brnID	br_r	br_x	br_b	rate_a	rate_b	rate_c	tap	shift	br_status	angmin	angmax	mva	construction_cost	branch_tnep_start")
+	println(mf, "mpc.ne_branch = [")
+	tpp_PrtBrn(mf,mp.gParcs,mp.asBuilt,nw,s)
+	tpp_PrtBrn(mf,mp.gOarcs,mp.asBuilt,nw,s)
+	tpp_PrtBrn(mf,mp.oOarcs,mp.asBuilt,nw,s)
+	tpp_PrtBrn(mf,mp.oParcs,mp.asBuilt,nw,s)
+	println(mf, "];")
+end
+########################################################
+function tpp_PrtBrn(mf,arcs,aB,nw,s)
+	for arc in arcs
+		for (i, cbl) in nw["ne_branch"]
+			brn_id=string(cbl["mva"])*string(arc.tail.id)*string(arc.head.id)
+			#brn_id=string(arc.tail.id)*string(arc.head.id)
+			#=if string(cbl["brnID"]) == string(100342272503224221)
+				print(string(cbl["mva"])*string(arc.tail.id)*string(arc.head.id))
+				typeof(string(cbl["mva"])*string(arc.tail.id)*string(arc.head.id))
+				print(" - ")
+				println(string(cbl["brnID"]))
+				typeof(string(cbl["brnID"]))
+			end
+		        #if occursin(brn_id,string(cbl["brnID"]))
+					if string(cbl["brnID"]) == string(100342272503224221)
+						print(string(cbl["mva"])*string(arc.tail.id)*string(arc.head.id))
+						print(" -2- ")
+						println(string(cbl["brnID"]))
+					end=#
+				if brn_id == string(cbl["brnID"])
+					print(mf,cbl["f_bus"],"\t")
+					print(mf,cbl["t_bus"],"\t")
+					print(mf,cbl["brnID"],"\t")
+					print(mf,cbl["br_r"],"\t")
+					print(mf,cbl["br_x"],"\t")
+					print(mf,cbl["b_to"]+cbl["b_fr"],"\t")
+					print(mf,cbl["rate_a"]*lod_cnceMva(),"\t")
+					print(mf,cbl["rate_b"]*lod_cnceMva(),"\t")
+					print(mf,cbl["rate_c"]*lod_cnceMva(),"\t")
+					print(mf,cbl["tap"],"\t")
+					print(mf,cbl["shift"],"\t")
+					print(mf,cbl["br_status"],"\t")
+					print(mf,lof_r2d(cbl["angmin"]),"\t")
+					print(mf,lof_r2d(cbl["angmax"]),"\t")
+					print(mf,cbl["mva"],"\t")
+					print(mf,cbl["construction_cost"],"\t")
+					strt=tpp_1build(string(trunc(Int,cbl["mva"]))*string(arc.tail.id)*string(arc.head.id),s)
+					print(mf,strt)
+					println(mf,";")
+                end
+        end
+	end
+end
+########################################################
+#prints bus titles and data for pccs, concessions, oss and onshore star point for partial map
+function tpp_prntPrtBuss(mf,mp,nw)
+	println(mf, "%bus data")
+	println(mf, "%bus_i	type	Pd	Qd	Gs	Bs	area	Vm	Va	baseKV	zone	Vmax	Vmin busID")
+	println(mf, "mpc.bus = [")
+	tpp_busPrtNode(mf,mp.pccs,nw)#prints all pccs to the bus
+	tpp_busPrtNode(mf,mp.cnces,nw)#prints all concessions to the bus
+	tpp_busPrtNode(mf,mp.osss,nw)#prints all oss to the bus
+	cnt=tpp_busPrtInf(mf,nw,mp)#builds the infinite onshore bus and load
+	println(mf, "];")
+	println(mf, "")
+	return cnt
+end
+########################################################
+function tpp_busPrtInf(mf,nw,mp)
+	cnt=0.0
+	for i=1:1:length(nw["bus"])
+		if string(nw["bus"][string(i)]["busID"])[1]=='8'
+			println(string(nw["bus"][string(i)]["busID"]))
+			println(string(nw["bus"][string(i)]["busID"])[1])
+			println(string(nw["bus"][string(i)]["bus_i"]))
+			cnt=trunc(Int,nw["bus"][string(i)]["bus_i"])
+			println(cnt)
+			print(mf,cnt,"\t")
+			print(mf,nw["bus"][string(i)]["bus_type"],"\t")
+			mva=0
+			for i in mp.cnces
+				mva=mva+i.mva
+			end
+			print(mf,trunc(Int,mva),"\t")
+			print(mf,0.0,"\t")
+			print(mf,0.0,"\t")
+			print(mf,1.0,"\t")
+			print(mf,1.0,"\t")
+			print(mf,1.0,"\t")
+			print(mf,1.05,"\t")
+			print(mf,lod_pccKv(),"\t")
+			print(mf,1.0,"\t")
+			print(mf,1.1,"\t")
+			print(mf,0.9,"\t")
+			print(mf,string(nw["bus"][string(i)]["busID"]))
+			println(mf,";")
+		end
+	end
+	return cnt
+end
+########################################################
+function tpp_busPrtNode(mf,nodes,nw)
+	for node in nodes
+		for (i, bus) in nw["bus"]
+		        if string(bus["busID"]) == string(node.id)
+					print(mf,bus["bus_i"],"\t")
+					print(mf,bus["bus_type"],"\t")
+					print(mf,0.0,"\t")
+					print(mf,0.0,"\t")
+					print(mf,0.0,"\t")
+					print(mf,1.0,"\t")
+					print(mf,1.0,"\t")
+					print(mf,1.0,"\t")
+					print(mf,1.05,"\t")
+					print(mf,bus["base_kv"],"\t")
+					print(mf,1.0,"\t")
+					print(mf,1.1,"\t")
+					print(mf,0.9,"\t")
+					print(mf,bus["busID"])
+					println(mf,";")
+					@goto end_PrtNode
+                end
+        end
+		@label end_PrtNode
+	end
+end
 ################################################################################
 ######################## reconstruction of optimal solution ####################
 ################################################################################
@@ -83,13 +221,13 @@ function tpp_xtrctBrch(r,n)
 end
 ################################################################################
 function tpp_prnt2Scrn(r,nt)
+	prntout=""
 	for (b, branch) in r["solution"]["ne_branch"]
 	        if isapprox(branch["built"], 1.0, atol = 0.01) == 1
 				print(b)
 				print(" - ")
 				print(nt["ne_branch"]["$b"]["rate_a"]*lod_cnceMva())
-				print("MVA: ")
-				print(" Nodes:")
+				print("MVA, Nodes: ")
 	            print(nt["ne_branch"]["$b"]["f_bus"])
 	            print(" - ")
 	            print(nt["ne_branch"]["$b"]["t_bus"])
@@ -97,8 +235,12 @@ function tpp_prnt2Scrn(r,nt)
 	            print(nt["ne_branch"]["$b"]["construction_cost"])
 				print(" Built:")
 				println(branch["built"])
+				prntout=prntout*string(b)*" - "*string(nt["ne_branch"]["$b"]["rate_a"]*lod_cnceMva())
+				prntout=prntout*"MVA, Nodes: "*string(nt["ne_branch"]["$b"]["f_bus"])*" - "*string(nt["ne_branch"]["$b"]["t_bus"])
+				prntout=prntout*" Cost:"*string(nt["ne_branch"]["$b"]["construction_cost"])*" Built:"*string(branch["built"])*"\r\n"
 	        end
 	end
+	return prntout
 end
 ################################################################################
 ################################################################################################################
@@ -141,7 +283,7 @@ end
 #prints bus titles and data for pccs, concessions, oss and onshore star point
 function tpp_prntBuss(mf,mp)
 	println(mf, "%bus data")
-	println(mf, "%bus_i	type	Pd	Qd	Gs	Bs	area	Vm	Va	baseKV	zone	Vmax	Vmin id_bus")
+	println(mf, "%bus_i	type	Pd	Qd	Gs	Bs	area	Vm	Va	baseKV	zone	Vmax	Vmin busID")
 	println(mf, "mpc.bus = [")
 	tpp_busNode(mf,mp.pccs)#prints all pccs to the bus
 	tpp_busNode(mf,mp.cnces)#prints all concessions to the bus
@@ -169,7 +311,7 @@ function tpp_busInf(mf,n)
 	print(mf,1.0,"\t")
 	print(mf,1.1,"\t")
 	print(mf,0.9,"\t")
-	print(mf,"3"*string(n.num))
+	print(mf,"8"*string(n.num))
 	println(mf,";")
 end
 ########################################################
@@ -245,7 +387,7 @@ end
 ################################################################################################################
 function tpp_prntNeBrns(mf,mp,s)
 	println(mf, "%candidate branch data")
-	println(mf, "%column_names%	f_bus	t_bus	brnID	br_r	br_x	br_b	rate_a	rate_b	rate_c	tap	shift	br_status	angmin	angmax	construction_cost	branch_tnep_start")
+	println(mf, "%column_names%	f_bus	t_bus	brnID	br_r	br_x	br_b	rate_a	rate_b	rate_c	tap	shift	br_status	angmin	angmax	mva	construction_cost	branch_tnep_start")
 	println(mf, "mpc.ne_branch = [")
 	tpp_gpBrn(mf,mp.gParcs,mp.asBuilt,s)
 	tpp_goBrn(mf,mp.gOarcs,mp.asBuilt,s)
@@ -293,7 +435,7 @@ function tpp_gpBrn(mf,as,abs,s)
 				#println(cst)
 				tpp_asBuilt(a,abs,mva,arc,cst,a.lngth)
 				print(mf,cst,"\t")
-				strt=tpp_1build(string(trunc(Int,arc.cable.mva*arc.cable.num))*string(a.tail.id)*string(a.head.id),s)
+				strt=tpp_1build(string(trunc(Int,arc.cable.num*arc.cable.mva))*string(a.tail.id)*string(a.head.id),s)
 				print(mf,Float64(strt))
 				println(mf,";")
 			else
@@ -323,7 +465,7 @@ function tpp_goBrn(mf,as,abs,s)
 				cst=arc.costs.ttl+(-1*cstD_cfs().FC_ac)
 				tpp_asBuilt(a,abs,mva,arc,cst,a.lngth)
 				print(mf,cst,"\t")
-				strt=tpp_1build(string(trunc(Int,arc.cable.mva*arc.cable.num))*string(a.tail.id)*string(a.head.id),s)
+				strt=tpp_1build(string(trunc(Int,arc.cable.num*arc.cable.mva))*string(a.tail.id)*string(a.head.id),s)
 				print(mf,Float64(strt))
 				println(mf,";")
 			else
@@ -351,7 +493,7 @@ function tpp_ooBrn(mf,as,abs,s)
 				cst=cb.results.ttl+2*cstD_cfs().FC_ac
 				tpp_asBuilt(a,abs,mva,arc,cst,a.lngth)
 				print(mf,cst,"\t")
-				strt=tpp_1build(string(trunc(Int,arc.cable.mva*arc.cable.num))*string(a.tail.id)*string(a.head.id),s)
+				strt=tpp_1build(string(trunc(Int,arc.cable.num*arc.cable.mva))*string(a.tail.id)*string(a.head.id),s)
 				print(mf,Float64(strt))
 				println(mf,";")
 			else
@@ -401,7 +543,7 @@ function tpp_opBrn(mf,as,abs,s)
 					cst=arc.costs.ttl+cstD_cfs().FC_ac
 					tpp_asBuilt(a,abs,mva,arc,cst,a.lngth)
 					print(mf,cst,"\t")
-					strt=tpp_1build(string(trunc(Int,arc.cable.mva*arc.cable.num))*string(a.tail.id)*string(a.head.id),s)
+					strt=tpp_1build(string(trunc(Int,arc.cable.num*arc.cable.mva))*string(a.tail.id)*string(a.head.id),s)
 					print(mf,Float64(strt))
 					println(mf,";")
 				else
@@ -423,7 +565,7 @@ function tpp_opBrn(mf,as,abs,s)
 					cst=arc.costs.ttl+cstD_cfs().FC_ac
 					tpp_asBuilt(a,abs,mva,arc,cst,a.lngth)
 					print(mf,cst,"\t")
-					strt=tpp_1build(string(trunc(Int,arc.cable.mva*arc.cable.num))*string(a.tail.id)*string(a.head.id),s)
+					strt=tpp_1build(string(trunc(Int,arc.cable.num*arc.cable.mva))*string(a.tail.id)*string(a.head.id),s)
 					print(mf,Float64(strt))
 					println(mf,";")
 				else
@@ -450,6 +592,7 @@ function tpp_prntBrn(mf,a,cb,xr,xxl)
 	print(mf,1.0,"\t")
 	print(mf,-30.0,"\t")
 	print(mf,30.0,"\t")
+	print(mf,trunc(Int,cb.mva*cb.num),"\t")
 end
 ########################################################
 function tpp_prntBrnOnShre(mf,fn,tn,p,ob)
@@ -476,6 +619,22 @@ function tpp_prntBrns(mf,mp,ob)
 	println(mf, "mpc.branch = [")
 	mva=0.0
 	tn=length(mp.pccs)+length(mp.cnces)+length(mp.osss)+1
+	for i in mp.cnces
+		mva=mva+i.mva
+	end
+	for i in mp.pccs
+		tpp_prntBrnOnShre(mf,i.num,tn,mva,ob)
+	end
+	println(mf, "];")
+	println(mf, "")
+end
+########################################################
+function tpp_prntPrtBrns(mf,mp,ob,cnt)
+	println(mf, "%branch data")
+	println(mf, "%fbus	tbus	r	x	b	rateA	rateB	rateC	ratio	angle	status	angmin	angmax objmax")
+	println(mf, "mpc.branch = [")
+	mva=0.0
+	tn=cnt
 	for i in mp.cnces
 		mva=mva+i.mva
 	end
