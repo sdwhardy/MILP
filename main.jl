@@ -10,8 +10,8 @@ using JuMP, Gurobi
 #using Ipopt
 #using Juniper
 #using Pavito
-#using MAT
-
+using MAT
+using JLD
 #Includes all dependancies
 #All data structures
 include("cost/cst_structure.jl")#cost
@@ -57,15 +57,15 @@ function mn_setUpTnep()
     cntrls.xrad=true
     cntrls.neib1=true
     cntrls.neib3=true
-    cntrls.xradPcc=false
-    cntrls.xradHlf=false
+    cntrls.xradPcc=true
+    cntrls.xradHlf=true
     cntrls.spcfy=false
     cntrls.xXrad=[1,2,3,4,5,6,7]
     cntrls.xXneib1=[1,2,3,4,5,6,7]
     cntrls.xXneib3=[1,2,3,4,5,6,7]
     mp=mn_buildMap(cntrls)
     tpp_main2mfile(mp,solmin,objmin)
-    return mp.asBuilt
+    return mp
 end
 
 
@@ -124,19 +124,55 @@ function mn_tnep_full()
         return oplssngs
         #return 1
 end
+
+function mn_fnlTnep(ops)
+    #solve initialization problem
+    solmin=Array{Int64,1}()
+    objmin=10000
+    cntrls=control()
+    cntrls.xrad=true
+    cntrls.neib1=true
+    cntrls.neib3=true
+    cntrls.xradPcc=true
+    cntrls.xradHlf=true
+    cntrls.spcfy=false
+    cntrls.xXrad=[1,2,3,4,5,6,7]
+    cntrls.xXneib1=[1,2,3,4,5,6,7]
+    cntrls.xXneib3=[1,2,3,4,5,6,7]
+    map=lof_layoutOcnFnl(cntrls,ops)
+    return map
+end
+
+full_map=mn_setUpTnep()
+ab=full_map.asBuilt
+ppf_printOcn(full_map)
+mv("results/owpp_tnep_map.mat", "results/owpp_tnep_map.m", force=true)
+network_data_all = PowerModels.parse_file("results/owpp_tnep_map.m")
+mp1=mn_fnlTnep(wawa["ops"])
+println(mp1.cnces[9].coord)
+ppf_printOcn(mp1)
+mp1.asBuilt=ab
+oplssng=oplossing()
+tpp_main2PartMfile(mp1,network_data_all,wawa["ops"][1].eyeDs,wawa["ops"][1].objBst)
+oplssng.eyeDs,oplssng.objBst,oplssng.sumry,oplssng.layout=mn_slvMilp(mp1)
+#push!(ops,oplssng)
+println(ops[1].sumry)
+println(ops[2].objBst)
+println(ops[3].objBst)
+println(ops[4].objBst)
+println(ops[5].objBst)
+println(ops[6].sumry)
 #ab=mn_setUpTnep()
+wawa["ops"]
+oplssng
+ops
 ops=mn_tnep_full()
-println(ops[1].layout.pccs)
-ppf_printOcn(ops[1].layout)#print ocean
-
-
-
-
-
-
-
-
-
+println(ops[6].layout.pccs)
+ppf_printOcn(oplssng.layout)#print ocean
+wawa = load("results/solution2nd.jld")
+ppf_printOcn(wawa["ops"][3].layout)
+mp1=mn_fnlTnep(wawa["ops"])
+ppf_printOcn(mp1)
 
 
 
@@ -157,7 +193,7 @@ end
 function xfmr_cost(S,wp,o2o)
     xfm=cstF_xfm_ttl(S,wp,o2o)
     print("Xfm: ")
-    println(xfm.results.ttl)
+    println(xfm)
 end
 
 #################### Cost of transformer and cables #################
@@ -171,6 +207,7 @@ function xfmr_cbl_cost(l,S,kv,wp,o2o)
     println(arc)
     println()
 end
+
 ###################### linearization of cost ########################
 function lcbl_cost(l,kv,wp,o2o)
     S_min=50
@@ -184,26 +221,27 @@ end
 ##################################################################
 #A main function is used to encasulate code as outa function is global scope and should be avoided
 function main()
-    l=100
-    S=1000
-    kv=132
+    l=1
+    S=750
+    kv=66
 
-    mn=13
-    a=11.08
-    k=2.32
-    #wp=wndF_wndPrf(mn,a,k)
-    wp=wndF_wndPrf()
+    #mn=13
+    ka=Array{Tuple,1}()
+    push!(ka,(2.32,11.08))#[(k,a)]
+    wp=wndF_wndPrf(ka,turb())
+    #wp=wndF_wndPrf()
 
     #o2o=false#PCC transformer/ compensation 50-50 offshore-onshore
-    o2o=false#OSS transformer/ compensation all offshore
+    #o2o=true#OSS transformer/ compensation all offshore
     #cbl_cost(l,S,kv,wp,o2o)
     #xfmr_cost(S,wp,o2o)
 
     #for S=500:1:1500
-    xfmr_cbl_cost(l,S,kv,wp,o2o)
+    #xfmr_cbl_cost(l,S,kv,wp,o2o)
     #end
-    #plotly()
-    #plot(wp.pu,wp.ce)
+    plotly()
+    println((findmax(wp.ce)[1]))
+    plot(wp.pu,wp.ce./(findmax(wp.ce)[1]) ,xlabel="Power (p.u.)",ylabel="Constrained Energy (p.u.)",xtickfont = font(12),ytickfont = font(12))
 
     #lcbl_cost(l,kv,wp,o2o)#cstF_linearize_cbl
 end

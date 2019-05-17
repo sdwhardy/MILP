@@ -2,6 +2,88 @@
 ###############################################################################
 ############################ Main #############################################
 ###############################################################################
+function lof_osssFnl(ocn,cnt,sol)
+    num=length(ocn.pccs)+length(ocn.cnces)+1
+    cns=reverse(ocn.cnces,1)
+    osss=Array{oss,1}()
+    osssAll=Array{oss,1}()
+    unicIds=Array{String,1}()
+    IdsAll=Array{String,1}()
+    println(cnt)
+    for mp in sol
+        for ss in mp.layout.osss
+            push!(IdsAll,ss.id)
+            push!(osssAll,ss)
+        end
+    end
+    unicIds=unique(IdsAll)
+    println(unicIds)
+    for id in unicIds
+        for ss in osssAll
+            if id == ss.id
+                push!(osss,ss)
+                @goto ids_outLp
+            end
+        end
+        @label ids_outLp
+    end
+    for i=1:length(cns)
+        if cnt.xradPcc==true
+            num=0
+            num=lof_ossXradPcc(i,num,cns,ocn.pccs,osss,lod_rad(),false)#lay oss version 3
+        end
+        if (i<=lod_frcNum() && cnt.xradHlf==true)
+            num=0
+            num=lof_ossXradPcc12(i,num,cns,ocn.pccs,osss,lod_rdFrc(),true)
+        end
+    end
+    nl=1
+    ol=2
+    if lod_ossSpcfy()==true
+        while nl != ol
+            ol=deepcopy(length(osss))
+            lof_ossSprcfy(osss)
+            nl=deepcopy(length(osss))
+        end
+    end
+    osss=lof_ossOrder(osss,ocn)
+    lof_wndPfOss(osss,ocn)
+    ocn.osss=deepcopy(osss)
+    #=print("bus 10 ID: ")
+    println(ocn.osss[10].id)=#
+end
+###############################################################################
+function lof_layoutOcnFnl(cnt,sol)
+    ocean=eez()#build the eez in the ocean
+    lof_shoreConnect(ocean.pccs)#add the gps of points of common coupling
+    println("PCCs positioned...")
+    ocean.cnces=lof_layoutZone(length(ocean.pccs))#add the region with concessions
+    println("OWPPs positioned...")
+    base=lof_bseCrd(ocean)#find base coordinates
+    lof_dists(ocean,base)#set layout in terms of base
+    println("GPS coordinates projected onto cartesian plane...")
+    os=lof_rotateOcn(ocean)#apply rotation to align n-s with y
+    lof_slideOcn(ocean,os)#slide to align western most point with x=0
+    println("Axis transformed...")
+    lof_ewbnd(ocean)#find the boundary of region containnig oss
+    println("boundary drawn...")
+    lof_osssFnl(ocean,cnt,sol)#add all osss within boundary
+    #lof_osss(ocean,cnt)
+    println("OSSs positioned...")
+    lof_GoArcs(ocean)#add all gen to oss arcs within boundary
+    println("OWPP to OSS arcs complete...")
+    lof_GpArcs(ocean)#add all gen to pcc arcs within boundary
+    println("OWPP to PCC arcs complete...")
+    lof_OpArcs(ocean)#add all oss to pcc arcs within boundary
+    println("OSS to PCC arcs complete...")
+    lof_OoArcs(ocean)#add all oss to oss arcs within boundary
+    println("OSS to OSS arcs complete...")
+    #println(length(ocean.gOarcs)+length(ocean.oOarcs)+length(ocean.oParcs))
+    #println(length(ocean.cnces)+length(ocean.osss)+length(ocean.pccs))
+    #ppf_printOcn(ocean)#print ocean
+    return ocean
+end
+###############################################################################
 function lof_layoutOcn(cnt)
     ocean=eez()#build the eez in the ocean
     lof_shoreConnect(ocean.pccs)#add the gps of points of common coupling
@@ -669,7 +751,6 @@ function lof_atX(mb,p1,p2)
     end
     return xy1,xy2
 end
-#$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$ FIX THE FUCKING IDS!!!!!!!!!!!!!!!!
 ###############################################################################
 #main control func to lay OSS on radius around the OWPP
 function lof_ossXradius(i,num,cns,osss,cnt)
