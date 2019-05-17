@@ -109,8 +109,9 @@ function ppf_printOcn(ocean)
 
 
 
-	p=plot(xoss,yoss,annotations=oss,color = :blue,seriestype=:scatter,xticks = ylimin:1:ylimax,xlims=(ylimin,ylimax),yticks = ylimin:5:ylimax,label="")
-	plot!(p,xpcc,ypcc,annotations=pcc,color = :black,seriestype=:scatter,xticks = ylimin:1:ylimax,xlims=(ylimin,ylimax),yticks = ylimin:5:ylimax,label="")
+	#p=plot(xoss,yoss,annotations=oss,color = :black,seriestype=:scatter,xticks = ylimin:1:ylimax,xlims=(ylimin,ylimax),yticks = ylimin:5:ylimax,label="")
+	p=plot(xoss,yoss,color = :black,seriestype=:scatter,xticks = ylimin:1:ylimax,xlims=(ylimin,ylimax),yticks = ylimin:5:ylimax,label="")
+	plot!(p,xpcc,ypcc,annotations=pcc,color = :blue,seriestype=:scatter,xticks = ylimin:1:ylimax,xlims=(ylimin,ylimax),yticks = ylimin:5:ylimax,label="")
 	#annotate!(oss)
 	plot!(p,xgen,ygen,annotations=gen,color = :red,seriestype=:scatter,xticks = ylimin:1:ylimax,xlims=(ylimin,ylimax),yticks = ylimin:5:ylimax,label="")
 	#p=plot(xoss,yoss,seriestype=:scatter)
@@ -126,7 +127,7 @@ function ppf_printOcn(ocean)
 		push!(xd,i.head.coord.x)
 		push!(yd,i.tail.coord.y)
 		push!(yd,i.head.coord.y)
-		plot!(p,xd,yd,color = :red,xticks = ylimin:1:ylimax,xlims=(ylimin,ylimax),yticks = ylimin:5:ylimax,label="")
+		plot!(p,xd,yd,color = :black,xticks = ylimin:1:ylimax,xlims=(ylimin,ylimax),yticks = ylimin:5:ylimax,label="")
 		xd=[]
 		yd=[]
 	end
@@ -144,7 +145,7 @@ function ppf_printOcn(ocean)
 		push!(xd,i.head.coord.x)
 		push!(yd,i.tail.coord.y)
 		push!(yd,i.head.coord.y)
-		plot!(p,xd,yd,color = :blue,xticks = ylimin:1:ylimax,xlims=(ylimin,ylimax),yticks = ylimin:5:ylimax,label="")
+		plot!(p,xd,yd,color = :red,xticks = ylimin:1:ylimax,xlims=(ylimin,ylimax),yticks = ylimin:5:ylimax,label="")
 		xd=[]
 		yd=[]
 	end
@@ -153,7 +154,7 @@ function ppf_printOcn(ocean)
 		push!(xd,i.head.coord.x)
 		push!(yd,i.tail.coord.y)
 		push!(yd,i.head.coord.y)
-		plot!(p,xd,yd,color = :blue,xticks = ylimin:1:ylimax,xlims=(ylimin,ylimax),yticks = ylimin:5:ylimax,label="")
+		plot!(p,xd,yd,color = :red,xticks = ylimin:1:ylimax,xlims=(ylimin,ylimax),yticks = ylimin:5:ylimax,label="")
 		xd=[]
 		yd=[]
 	end

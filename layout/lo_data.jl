@@ -42,7 +42,7 @@ end
 ###############################################################################
 #furthest # of owpp to add lod_rdFrc() point oss (midpoint compensation)
 function lod_frcNum()
-    return 1
+    return 4
 end
 ###############################################################################
 #distance from owpp to place nearest oss on path to neighbouring owpp
