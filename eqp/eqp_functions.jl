@@ -1,7 +1,13 @@
 #=
 This file contains functions that manipulate the equipment data
 =#
-
+########################################################
+#change impedance to PU values
+function eqpf_puImped(cb,l)
+    cb.ohm=((cb.ohm*l)/cb.num)/eqpD_pu()[4]
+    cb.xl=((cb.xl*l)/cb.num)/eqpD_pu()[4]
+    cb.yc=cb.yc*l*cb.num*eqpD_pu()[4]
+end
 ########################################################
 function eqpF_puChgBs(Sn,z)
     z=z*100*10^6/Sn
@@ -41,7 +47,11 @@ end
 ########################################################
 #Logic function that gets the cable data of appropriae voltage level
 function eqpF_cbl_opt(kv,cbls,km)
-    if kv==132.0
+    if kv==33.0
+        opt=eqpD_33cbl_opt(cbls,km)
+    elseif kv==66.0
+        opt=eqpD_66cbl_opt(cbls,km)
+    elseif kv==132.0
         opt=eqpD_132cbl_opt(cbls,km)
     elseif kv==220.0
         opt=eqpD_220cbl_opt(cbls,km)
@@ -98,7 +108,7 @@ function eqpF_cbl_sel(cbls,S,l)
     cbls_2use=[]
 #Get limits and max cables possible in parallel - specified in eqp_data.jl
     lims=eqpD_eqp_lims()
-    parCmax=eqpD_MAXcbls()
+    parCmax=eqpD_MAXcbls(cbls[1][1])
     for i in cbls
         for j=1:parCmax
             if ((j*i[8])>lims[1]*S && (j*i[8])<lims[2]*S)
@@ -108,18 +118,6 @@ function eqpF_cbl_sel(cbls,S,l)
     end
     return cbls_2use
 end
-#####################################################
-#cable suceptance
-#=function eqpF_cblB(cb)
-    print("C: ")
-    println(2*pi*50*cb.length*cb.farrad)
-
-    print("X: ")
-    println(cb.henry)
-    b=(-1*cb.henry)/abs(cb.henry^2+(cb.ohm*cb.length)^2)
-    return b
-end=#
-########################################################################################################################################################################
 ########################################################################################################################################################################
 #built chosen sizes into transformer structured array
 function eqpF_xfo_struct(s,num)
@@ -147,3 +145,20 @@ function eqpF_xfo_sel(xfos,S)
     end
     return xfms_2use
 end
+###########################################################################
+
+
+#################################################################################################################
+################################# Removed #######################################################################
+#################################################################################################################
+#cable suceptance
+#=function eqpF_cblB(cb)
+    print("C: ")
+    println(2*pi*50*cb.length*cb.farrad)
+
+    print("X: ")
+    println(cb.henry)
+    b=(-1*cb.henry)/abs(cb.henry^2+(cb.ohm*cb.length)^2)
+    return b
+end=#
+##################################################################################################################

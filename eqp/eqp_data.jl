@@ -3,9 +3,10 @@ This file contains the input data for equipment used
 =#
 ########################################################
 #sets PU values
+#should be moved into functions
 function eqpD_pu()
-    va=1000.0*10^6
-    v=132.0*10^3
+    va=lod_cnceMva()*10^6
+    v=lod_pccKv()*10^3
     i=(va)/(sqrt(3)*v)
     z=v^2/va
     y=1/z
@@ -51,11 +52,11 @@ function eqpD_xfoXR(kv,x)
     if kv == 400
         X=0.08
         R=0.0014
-    elseif kv == 220
+    elseif kv == 220 || kv == 66
         X=0.09
         R=0.0016
 #assumed values based on data given. needs to be updated
-elseif kv == 132
+elseif kv == 132 || kv == 33
         X=0.1
         R=0.0018
     else
@@ -66,17 +67,64 @@ elseif kv == 132
     x.ohm=eqpF_puChgBs(mva,R)
 end
 ########################################################
-########################################################
 #set the system AC frequency
 function eqpD_freq()
     return 50.0
 end
 ########################################################
 #Set maximum of cables possible in parallel
-function eqpD_MAXcbls()
-    return 12
+function eqpD_MAXcbls(kv)
+    if kv == 33 || kv == 66
+        pll=12
+    else
+        pll=12
+    end
+    return pll
 end
 
+########################################################
+#33kV cables
+function eqpD_33cbl_opt(cbls,km)
+#exchange rate
+    p2e=cstD_xchg()
+#%kV,cm^2,mohms/km,nF/km,Amps,10^3 euros/km, mH, capacity at km
+    a=[33, 95, 218, 0.18, 300, 434*p2e, 0.44]
+    b=[33, 120, 172, 0.19, 340, 443*p2e, 0.42]
+    c=[33, 150, 136, 0.21, 375, 453*p2e, 0.41]
+    d=[33, 185, 110, 0.22, 420, 466*p2e, 0.39]
+    e=[33, 240, 84.8, 0.24, 480, 468*p2e, 0.38]
+    f=[33, 300, 67.6, 0.26, 530, 505*p2e, 0.36]
+    g=[33, 400, 53.2, 0.29, 590, 531*p2e, 0.35]
+    h=[33, 500, 42.8, 0.32, 655, 564*p2e, 0.34]
+    i=[33, 630, 34.6, 0.35, 715, 598*p2e, 0.32]
+    j=[33, 800, 28.7, 0.38, 775, 638*p2e, 0.31]
+    alphbt=[a,b,c,d,e,f,g,h,i,j]
+    alphbt=eqpF_cbls_caps(alphbt,km)
+    cbls=eqpF_pushArray(cbls,alphbt)
+    return cbls
+end
+########################################################
+#66kV cables
+function eqpD_66cbl_opt(cbls,km)
+#exchange rate
+    p2e=cstD_xchg()
+#%kV,cm^2,mohms/km,nF/km,Amps,10^3 euros/km, mH, capacity at km
+    a=[66, 95, 2181, 0.17, 300, 462*p2e, 0.44]
+    b=[66, 120, 172, 0.18, 340, 472*p2e, 0.43]
+    c=[66, 150, 136, 0.19, 375, 482*p2e, 0.41]
+    d=[66, 185, 110, 0.2, 420, 496*p2e, 0.4]
+    e=[66, 240, 84.8, 0.22, 480, 517*p2e, 0.38]
+    f=[66, 300, 67.6, 0.24, 530, 537*p2e, 0.37]
+    g=[66, 400, 53.2, 0.26, 590, 564*p2e, 0.35]
+    h=[66, 500, 42.8, 0.29, 655, 598*p2e, 0.34]
+    i=[66, 630, 34.6, 0.32, 715, 634*p2e, 0.33]
+    j=[66, 800, 28.7, 0.35, 775, 676*p2e, 0.32]
+    k=[66, 1000, 24.5, 0.38, 825, 716*p2e, 0.31]
+    alphbt=[a,b,c,d,e,f,g,h,i,j,k]
+    alphbt=eqpF_cbls_caps(alphbt,km)
+    cbls=eqpF_pushArray(cbls,alphbt)
+    return cbls
+end
 ########################################################
 #138kV cables
 function eqpD_132cbl_opt(cbls,km)
